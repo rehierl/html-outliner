@@ -11,17 +11,17 @@ const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 
-//- context types
-//- used in combination with CContext objects
-const CT_HIDE = 0;//"has-hidden-attribute";
-const CT_SR = 1;//"sectioning-root";
-const CT_SC = 2;//"sectioning-content";
-const CT_HC = 3;//"heading-content";
+//- context type constants used in combination with CContext objects
+const CT_HIDE = 0;//- "has-hidden-attribute";
+const CT_SR = 1;//- "sectioning-root";
+const CT_SC = 2;//- "sectioning-content";
+const CT_HC = 3;//- "heading-content";
 
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
 
 //- new CAlgorithm()
+//  throws AssertionError
 constructor() {
   assert((this instanceof CAlgorithm), "invalid call");
   assert((arguments.length === 0), "invalid call");
@@ -29,6 +29,7 @@ constructor() {
 //public:
 
   //- COutline createOutline(DomNode domNode)
+  //  throws AssertionError
   
 //private:
 
@@ -556,7 +557,7 @@ onHC_enter(node) {
   //  this point, all sections in the current SR/SC have existing headings
   assert(!this.currentSection.hasImpliedHeading(), "internal error");
   
-  if(false){//- just a shortcut
+  {//- just an optional performance shortcut
     let lastSection = this.currentOutline.lastSection();
     
     //- lastSection always has a heading - see above

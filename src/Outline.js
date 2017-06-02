@@ -15,7 +15,7 @@ constructor(node) {
   assert((this instanceof COutline), "invalid call");
   assert((arguments.length === 1), "invalid call");
   
-  //- NetBeans, stop trolling me ...
+  //- NodeJs issue with require...
   //assert((node instanceof CNodeProxy), "invalid call");
   assert((node.isSR() || node.isSC()), "invalid call");
   
@@ -66,7 +66,7 @@ isImpliedOutline() {
 addSection(section) {
   assert((arguments.length === 1), "invalid call");
   
-  //- NetBeans, stop trolling me ...
+  //- NodeJs issue with require...
   //assert((section instanceof CSection), "invalid call");
   
   this._sections.push(section);

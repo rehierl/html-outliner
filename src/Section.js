@@ -19,12 +19,12 @@ constructor(node, heading) {
   assert((this instanceof CSection), "invalid call");
   assert((arguments.length === 2), "invalid call");
 
-  //- NetBeans, stop trolling me ...
+  //- NodeJs issue with require...
   //assert((node instanceof CNodeProxy), "invalid call");
   assert((node.isSR() || node.isSC() || node.isHC()), "invalid call");
   
   if(heading !== null) {
-    //- NetBeans, stop trolling me ...
+  //- NodeJs issue with require...
     //assert((heading instanceof CNodeProxy), "invalid call");
     assert(heading.isHC(), "invalid call");
   }
@@ -156,7 +156,7 @@ hasHeading() {
   assert((arguments.length === 0), "invalid call");
   let heading = this._heading;
   
-  //- NetBeans, stop trolling me ...
+  //- NodeJs issue with require...
   //return (heading instanceof CNodeProxy);
   
   return ((heading !== null) && (heading !== IMPLIED_HEADING));
@@ -177,9 +177,11 @@ heading(heading) {
   }
   
   assert((arguments.length === 1), "invalid call");
-  //- NetBeans, stop trolling me ...
+  
+  //- NodeJs issue with require...
   //assert((heading instanceof CNodeProxy), "invalid call");
   assert(heading.isHC(), "invalid call");
+  
   //- i.e. do not overwrite, not even an implied one
   assert((this._heading === null), "invalid call");
 
