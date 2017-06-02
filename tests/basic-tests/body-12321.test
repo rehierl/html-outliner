@@ -1,0 +1,11 @@
+
+$test.$comment() ##########
+$test.$html(body)
+
+<body>
+  <h1>A</h1>
+  <h2>B</h2>
+  <h3>C</h3>
+  <h2>D</h2>
+  <h1>E</h1>
+</body>

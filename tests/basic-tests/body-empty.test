@@ -1,0 +1,6 @@
+
+$test.$comment() ##########
+$test.$html(body)
+
+<body>
+</body>
