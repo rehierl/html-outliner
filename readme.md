@@ -10,12 +10,6 @@ algorithm by implementing it using JavaScript and Node.js.
 * [Algorithm.js](./src/Algorithm.js) is this repository's main source file.
 * Not yet published on [npmjs.com](https://www.npmjs.com/)
 
-## TODO
-
-* Node.js has an [issue](https://github.com/nodejs/node/issues/13408)
-  with 'require' influencing if the 'instanceof' operator fails or not.
-  When fixed, uncomment the 'assert's marked with "NodeJs issue with require..."
-
 ## Related Links
 
 This implementation is based upon:
