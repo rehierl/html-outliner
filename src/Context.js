@@ -3,9 +3,11 @@
 
 const assert = require("assert");
 
+/* must appear below module.exports (cyclic require statements)
 const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
+//*/
 
 module.exports = class CContext {
 //========//========//========//========//========//========//========//========
@@ -85,3 +87,9 @@ currentOutline() {
 
 //========//========//========//========//========//========//========//========
 };//- module.exports
+
+//* must appear below module.exports (cyclic require statements)
+const CNodeProxy = require("./NodeProxy.js");
+const CSection = require("./Section.js");
+const COutline = require("./Outline.js");
+//*/

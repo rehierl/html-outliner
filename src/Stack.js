@@ -3,7 +3,9 @@
 
 const assert = require("assert");
 
+/* must appear below module.exports
 const CContext = require("./Context.js");
+//*/
 
 module.exports = class CStack {
 //========//========//========//========//========//========//========//========
@@ -64,3 +66,8 @@ isEmpty() {
 
 //========//========//========//========//========//========//========//========
 };//- module.exports
+
+//* must appear below module.exports
+//  due to Node.js having an issue with cyclic require statements.
+const CContext = require("./Context.js");
+//*/

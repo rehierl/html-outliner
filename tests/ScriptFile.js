@@ -5,7 +5,10 @@ const assert = require("assert");
 const format = require("util").format;
 
 const JSDOM = require("jsdom").JSDOM;
+
+/* must appear below module.exports (cyclic require statements)
 const CAlgorithm = require("../src/Algorithm.js");
+//*/
 
 module.exports = class CScriptFile {
 //========//========//========//========//========//========//========//========
@@ -212,3 +215,7 @@ run() {
 
 //========//========//========//========//========//========//========//========
 };//- module.exports
+
+//* must appear below module.exports (cyclic require statements)
+const CAlgorithm = require("../src/Algorithm.js");
+//*/

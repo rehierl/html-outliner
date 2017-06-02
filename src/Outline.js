@@ -4,8 +4,10 @@
 const assert = require("assert");
 const format = require("util").format;
 
+/* must appear below module.exports (cyclic require statements)
 const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
+//*/
 
 module.exports = class COutline {
 //========//========//========//========//========//========//========//========
@@ -15,8 +17,7 @@ constructor(node) {
   assert((this instanceof COutline), "invalid call");
   assert((arguments.length === 1), "invalid call");
   
-  //- NodeJs issue with require...
-  //assert((node instanceof CNodeProxy), "invalid call");
+  assert((node instanceof CNodeProxy), "invalid call");
   assert((node.isSR() || node.isSC()), "invalid call");
   
   //- implicitly associate node with this outline
@@ -65,9 +66,7 @@ isImpliedOutline() {
 //- void addSection(CSection section)
 addSection(section) {
   assert((arguments.length === 1), "invalid call");
-  
-  //- NodeJs issue with require...
-  //assert((section instanceof CSection), "invalid call");
+  assert((section instanceof CSection), "invalid call");
   
   this._sections.push(section);
   section.parentOutline(this);
@@ -96,3 +95,8 @@ sections() {
 
 //========//========//========//========//========//========//========//========
 };//- module.exports
+
+//* must appear below module.exports (cyclic require statements)
+const CNodeProxy = require("./NodeProxy.js");
+const CSection = require("./Section.js");
+//*/

@@ -6,7 +6,9 @@ const format = require("util").format;
 const path = require("path");
 const fs = require("fs");
 
+/* must appear below module.exports (cyclic require statements)
 const CScriptFile = require("./ScriptFile.js");
+//*/
 
 module.exports = class CRepository {
 //========//========//========//========//========//========//========//========
@@ -114,3 +116,7 @@ readDirRecursive(dir, files) {
 
 //========//========//========//========//========//========//========//========
 };//- module.exports
+
+//* must appear below module.exports (cyclic require statements)
+const CScriptFile = require("./ScriptFile.js");
+//*/

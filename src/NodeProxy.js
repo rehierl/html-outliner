@@ -5,8 +5,11 @@ const assert = require("assert");
 const format = require("util").format;
 
 const isObjectInstance = require("./isObjectInstance.js");
+
+/* must appear below module.exports (cyclic require statements)
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
+//*/
 
 //========//========//========//========//========//========//========//========
 
@@ -403,3 +406,8 @@ innerOutline(innerOutline) {
 
 //========//========//========//========//========//========//========//========
 };//- module.exports
+
+//* must appear below module.exports (cyclic require statements)
+const CSection = require("./Section.js");
+const COutline = require("./Outline.js");
+//*/
