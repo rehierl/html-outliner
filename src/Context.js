@@ -13,19 +13,27 @@ module.exports = class CContext {
 //========//========//========//========//========//========//========//========
 //- new CContext(CNodeProxy node, CSection section, COutline outline)
 
-constructor(node, section, outline) {
-  assert((arguments.length === 3), "invalid call");
+constructor(type, node, section, outline) {
+  assert((arguments.length === 4), "invalid call");
+  //- type can be anything reasonable
   assert((node instanceof CNodeProxy), "invalid call");
   assert((section === null) || (section instanceof CSection), "invalid call");
   assert((outline === null) || (outline instanceof COutline), "invalid call");
   
 //public:
 
+  //- Anything type { get; }
   //- CNodeProxy node { get; }
   //- CSection section { get; }
   //- COutline outline { get; }
 
 //private:
+
+  //- Anything _type
+  //- the type identifier associated
+  //  with this context
+  //- mainly used to ignore/hide nodes
+  this._type = type;
 
   //- CNodeProxy _node
   //- the node that triggered the creation
@@ -44,14 +52,21 @@ constructor(node, section, outline) {
 }
 
 //========//========//========//========//========//========//========//========
-//- CNodeProxy Node { get; }
+//- Anything type { get; }
+
+get type() {
+  return this._type;
+}
+
+//========//========//========//========//========//========//========//========
+//- CNodeProxy node { get; }
 
 get node() {
   return this._node;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection Section { get; }
+//- CSection section { get; }
 
 get section() {
   return this._section;

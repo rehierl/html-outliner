@@ -176,10 +176,8 @@ isAncestorOf(subsection) {
   let parent = subsection._parentSection;
   
   while(parent !== null) {
-    if(parent === this) {
-      return true;
-    }
-    parent = parent._parentSection;
+    if(parent === this) return true;
+    parent = parent.parentSection;
   }
   
   return false;

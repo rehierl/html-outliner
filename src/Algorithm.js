@@ -12,6 +12,12 @@ const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 //*/
 
+//- CContext type flags used
+const CT_IGNORE = 0;//- hidden nodes, or inner sectioning root nodes (SR)
+const CT_SR = 1;//- top-level SRs, inner SRs
+const CT_SC = 2;//- sectioning content nodes (SC)
+const CT_HC = 3;//- heading content (HC)
+
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
 //- new CAlgorithm() throws AssertionError
@@ -42,6 +48,11 @@ constructor() {
   //- CNodeProxy startingNode
   //- the SR/SC node that was used to start the algorithm
   this.startingNode = null;
+  
+  //- inner SRs are optional and can be ignored
+  //- this flag is used to determine what to do when
+  //  entering an inner SR
+  this.ignoreInnerSR = false;
   
   //- CStack<CContext> stack
   //- used to save and restore the current context
@@ -240,12 +251,14 @@ onExit() {
 onContext_enter() {
   let context = this.stack.tos;
 
-  if(context.node.isHidden) {
+  if(context.type === CT_IGNORE) {
     //- enter the child of a hidden node
+    //- same with inner SRs, if it was decided
+    //  to also ignore these
     return true;//- ignore
   }
 
-  else if(context.node.isHC) {
+  else if(context.type === CT_HC) {
     //- enter the child of a heading
     //- could be <strike>, <bold>, etc. ???
     assert(!this.node.isSR, "invalid html");
@@ -262,17 +275,19 @@ onContext_exit() {
 
   if(context.node === this.node) {
     //- whoever pushes() onto the stack
-    //  should be responsible to pop()
+    //  is responsible to pop()
     //this.stack.pop();
   }
 
-  else if(context.node.isHidden) {
-    //- exit the child of a hidden node
-    //- not the hidden node itself
+  else if(context.type === CT_IGNORE) {
+    //- exit the child of a hidden node,
+    //  not the hidden node itself
+    //- same with inner SRs, if it was decided
+    //  to also ignore these
     return true;//- ignore
   }
 
-  else if(context.node.isHC) {
+  else if(context.type === CT_HC) {
     //- exit the child of a heading
     //- not the heading itself
   }
@@ -306,7 +321,7 @@ onNode_exit() {
   onHidden_enter() {
   //- ignore hidden nodes and any child nodes
   this.stack.push(new CContext(
-    this.node, this.outline, this.section
+    CT_IGNORE, this.node, this.outline, this.section
   ));
 }
 
@@ -315,10 +330,10 @@ onNode_exit() {
 
 onHidden_exit() {
   let context = this.stack.pop();
+  assert((context.type === CT_IGNORE), "internal error");
   assert((context.node === this.node), "internal error");
   assert((context.outline === this.outline), "internal error");
   assert((context.section === this.section), "internal error");
-  assert(this.node.isHidden, "internal error");
 }
 
 //========//========//========//========//========//========//========//========
@@ -329,12 +344,21 @@ onHidden_exit() {
 //- void onSR_enter(CNodeProxy node)
 
 onSR_enter() {
-  //- in case the rootNode is a SR, then this SR must be processed
-  //- all other (inner) SRs are optional, because
-  //  they must not contribute to ancestor SRs/SCs
-  //- although possible, it would be tricky not to do (i.e. ignore) these
+  if(this.ignoreInnerSR === true) {
+    this.stack.push(new CContext(
+      CT_IGNORE, this.node, this.outline, this.section));
+    return;//- ignore this inner SR
+  }
   
-  if(this.outline !== null) {
+  if(this.outline === null) {
+    //- this.rootNode is a SR, it must be processed
+    //- all other (inner) SRs are therefore optional;
+    //  they must not contribute to ancestor SRs/SCs
+    assert((this.rootNode === this.node), "internal error");
+    this.ignoreInnerSR = false;//- @TODO make optional
+  }
+  
+  else {//- if(this.outline !== null) {
     assert(false, "TODO: still need to test this...");
     //- this SR is child of some other SR/SC
 
@@ -354,33 +378,40 @@ onSR_enter() {
 
     //- push/save the current context
     this.stack.push(new CContext(
-      this.node, this.outline, this.section
+      CT_SR, this.node, this.outline, this.section
     ));
   }
 
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
-  let outline = new COutline(this.node);
-  this.outline = outline;
+  this.outline = new COutline(this.node);
 
   //- section.startingNode -> node
   //- does not set node.parentSection!
-  let section = new CSection(this.node, null);
-  this.section = section;
+  this.section = new CSection(this.node, null);
 
   //- outline.lastSection -> section
   //- section.parentOutline -> outline
-  outline.addSection(section);
+  this.outline.addSection(this.section);
 }
 
 //========//========//========//========//========
 //- void onSR_exit(CNodeProxy node)
 
 onSR_exit() {
+  if(this.ignoreInnerSR === true) {
+    let context = this.stack.pop();
+    assert((context.type === CT_IGNORE), "internal error");
+    assert((context.node === this.node), "internal error");
+    assert((context.outline === this.outline), "internal error");
+    assert((context.section === this.section), "internal error");
+    return;//- ignore this inner SR
+  }
+  
   if(this.section.hasNoHeading) {
     assert(false, "TODO: still need to test this...");
 
-    //- the current section (inside SR) does not have
+    //- the current section (inside this SR) does not have
     //  a single heading element; it ends with this SR
     this.section.createAndSetImpliedHeading();
   }
@@ -392,12 +423,12 @@ onSR_exit() {
 
   //- this SR is child of some other sectioning element
   assert(false, "TODO: still need to test this...");
-  let context = this.stack.pop();
   
+  let context = this.stack.pop();
+  assert((context.type === CT_SR), "internal error");
   assert((context.node === this.node), "internal error");
   assert((context.outline !== this.outline), "internal error");
   assert((context.section !== this.section), "internal error");
-  assert((this.outline === this.node.innerOutline), "internal error");
 
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
@@ -420,8 +451,15 @@ onSR_exit() {
 
 onSC_enter() {
   assert(false, "TODO: still need to test this...");
-
-  if(this.outline !== null) {
+  
+  if(this.outline === null) {
+    //- this.rootNode is a SC, not a SR
+    //- all SRs are therefore optional
+    assert((this.node === this.rootNode), "internal error");
+    this.ignoreInnerSR = false;//- @TODO make optional
+  }
+  
+  else {//- if(this.outline !== null) {
     //- this SC is child of some other SR/SC
 
     if(this.section.hasNoHeading) {
@@ -432,23 +470,21 @@ onSC_enter() {
 
     //- push/save the current context
     this.stack.push(new CContext(
-      this.node, this.outline, this.section
+      CT_SC, this.node, this.outline, this.section
     ));
   }
 
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
-  let outline = new COutline(this.node);
-  this.outline = outline;
+  this.outline = new COutline(this.node);
 
   //- section.startingNode -> node
   //- does not set node.parentSection!
-  let section = new CSection(this.node, null);
-  this.section = section;
+  this.section = new CSection(this.node, null);
 
   //- outline.lastSection -> section
   //- section.parentOutline -> outline
-  outline.addSection(section);
+  this.outline.addSection(this.section);
 }
 
 //========//========//========//========//========
@@ -458,7 +494,7 @@ onSC_exit() {
   assert(false, "TODO: still need to test this...");
 
   if(this.section.hasNoHeading) {
-    //- the current section (inside SC) does not have
+    //- the current section (inside this SC) does not have
     //  a single heading element; it ends with this SC
     this.section.createAndSetImpliedHeading();
   }
@@ -470,11 +506,10 @@ onSC_exit() {
 
   //- this SC is child of some other sectioning element
   let context = this.stack.pop();
-
+  assert((context.type === CT_SC), "internal error");
   assert((context.node === this.node), "internal error");
   assert((context.outline !== this.outline), "internal error");
   assert((context.section !== this.section), "internal error");
-  assert((this.outline === this.node.innerOutline), "internal error");
 
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
@@ -483,17 +518,14 @@ onSC_exit() {
   this.outline = context.outline;
   this.section = context.section;
 
-  //example: h1:A, h2:B, section, h1:C, /section, p
-  //- 'section' ends 'h2:B's implicit section
-  //- 'p' must be associated with 'h1:A'
+  //example: body, h1-A, h2-B, section, p, /body
+  //- 'section' ends h2-B's implicit section
+  //- 'p' must be associated with body's explicit section;
+  //  h1-A will become the heading of body's explicit section
 
-  //example: body, h1:A, h1:B, section, ..., /section, p, /body
-  //- assume that we are now exiting 'section', i.e. we have reached '/section'
-  //- in that case (this.section !== this.outline.lastSection)?
-  //question: to what exactly will the implicit section (h1:B) be attached?
-  //- same level as the explicit section (body/h1:A), or as its subsection?
-  //  h1:A will be the heading of that explicit section; i.e. it
-  //  doesn't trigger the creation of a new (implicit) section
+  //example: body, h1-A, h1-B, section, ..., /section, p, /body
+  //- exit 'section', i.e. we have reached '/section';
+  //  in that case (this.section !== this.outline.lastSection)?
 
   //- currentSection = currentOutline.lastSection
   this.section = this.outline.lastSection;
@@ -530,7 +562,7 @@ onHC_enter() {
   if(this.section.hasNoHeading) {
     this.section.heading = this.node;
     this.stack.push(new CContext(
-      this.node, this.outline, this.section));
+      CT_HC, this.node, this.outline, this.section));
     return;//- we are done here
   }
 
@@ -541,7 +573,7 @@ onHC_enter() {
   //  this point, all sections in the current SR/SC have existing headings
   assert(!this.section.hasImpliedHeading, "internal error");
   
-  {//- just an optional performance shortcut
+  if(true) {//- just an optional performance shortcut
     let lastSection = this.outline.lastSection;
     
     //- lastSection always has a heading - see above
@@ -557,7 +589,7 @@ onHC_enter() {
       this.outline.addSection(section);
       this.section = section;
       this.stack.push(new CContext(
-        this.node, this.outline, this.section));
+        CT_HC, this.node, this.outline, this.section));
       return;//- we are done here
     }
   }
@@ -591,7 +623,7 @@ onHC_enter() {
       parentSection.addSubSection(section);
       this.section = section;
       this.stack.push(new CContext(
-        this.node, this.outline, this.section));
+        CT_HC, this.node, this.outline, this.section));
       return;//- we are done here
     }
 
@@ -605,11 +637,12 @@ onHC_enter() {
       //example: body; h2-A; h1-B /body
       //- enter h1-B; add a new section to the current outline
       //
+      assert((parentSection === this.outline.lastSection), "internal error");
       let section = new CSection(this.node, this.node);
       this.outline.addSection(section);
       this.section = section;
       this.stack.push(new CContext(
-        this.node, this.outline, this.section));
+        CT_HC, this.node, this.outline, this.section));
       return;//- we are done here
     }
     
@@ -627,6 +660,7 @@ onHC_enter() {
 
 onHC_exit() {
   let context = this.stack.pop();
+  assert((context.type === CT_HC), "internal error");
   assert((context.node === this.node), "internal error");
   assert((context.outline === this.outline), "internal error");
   assert((context.section === this.section), "internal error");
