@@ -9,18 +9,18 @@ const CContext = require("./Context.js");
 
 module.exports = class CStack {
 //========//========//========//========//========//========//========//========
-
 //- new CStack()
+
 constructor() {
-  assert((this instanceof CStack), "invalid call");
   assert((arguments.length === 0), "invalid call");
   
 //public:
 
   //- void push(CContext context)
   //- CContext pop()
-  //- CContext tos()
-  //- bool isEmpty()
+
+  //- CContext tos { get; }
+  //- bool isEmpty { get; }
 
 //private:
 
@@ -30,8 +30,8 @@ constructor() {
 }
 
 //========//========//========//========//========//========//========//========
-
 //- void push(CContext context)
+
 push(context) {
   assert((arguments.length === 1), "invalid call");
   assert((context instanceof CContext), "invalid call");
@@ -39,27 +39,28 @@ push(context) {
 }
 
 //========//========//========//========//========//========//========//========
-
 //- CContext pop()
+
 pop() {
+  assert((arguments.length === 0), "invalid call");
   let len = this._buffer.length;
   assert((len > 0), "invalid call");
   return this._buffer.pop();
 }
 
 //========//========//========//========//========//========//========//========
+//- CContext tos { get; }
 
-//- CContext tos()
-tos() {
+get tos() {
   let len = this._buffer.length;
   assert((len > 0), "invalid call");
   return this._buffer[len-1];
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isEmpty { get; }
 
-//- bool isEmpty()
-isEmpty() {
+get isEmpty() {
   let len = this._buffer.length;
   return (len === 0);
 }

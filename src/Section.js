@@ -13,47 +13,42 @@ const IMPLIED_HEADING = "implied-heading";
 
 module.exports = class CSection {
 //========//========//========//========//========//========//========//========
-
 //- new CSection(CNodeProxy startingNode, CNodeProxy heading)
 //- new CSection(node, null) - start a new section with an unknown heading
 //- new CSection(node, heading) - start a new section with a known heading
+
 constructor(node, heading) {
-  assert((this instanceof CSection), "invalid call");
   assert((arguments.length === 2), "invalid call");
 
   assert((node instanceof CNodeProxy), "invalid call");
-  assert((node.isSR() || node.isSC() || node.isHC()), "invalid call");
+  assert((node.isSR || node.isSC || node.isHC), "invalid call");
   
   if(heading !== null) {
     assert((heading instanceof CNodeProxy), "invalid call");
-    assert(heading.isHC(), "invalid call");
+    assert(heading.isHC, "invalid call");
   }
   
   //- don't implicitly associate
-  //node.parentSection(this);
+  //node.parentSection = this;
   
 //public:
 
-  //- CNodeProxy startingNode()
-  //- bool isImpliedSection()
+  //- CNodeProxy startingNode { get; }
+  //- bool isImpliedSection { get; }
+  //- COutline parentOutline { get; set; }
   
-  //- COutline parentOutline()
-  //- void parentOutline(COutline parentOutline)
-  
-  //- bool hasNoHeading()
+  //- bool hasNoHeading { get; }
   //- void createAndSetImpliedHeading()
-  //- bool hasImpliedHeading()
-  //- bool hasHeading()
-  //- CNodeProxy heading()
-  //- void heading(CNodeProxy node)
+  //- bool hasImpliedHeading { get; }
+  //- bool hasHeading { get; }
+  //- CNodeProxy heading { get; set; }
 
   //- bool isAncestorOf(CSection subsection)
   //- void addSubSection(CSection section)
-  //- bool hasParentSection()
-  //- CSection parentSection()
-  //- void parentSection(CSection parentSection)
-  //- CSection lastSubSection()
-  //- CSection[] subsections()
+  //- bool hasParentSection { get; }
+  //- CSection parentSection { get; set; }
+  //- CSection lastSubSection { get; }
+  //- CSection[] subsections { get; }
 
 //private:
   
@@ -83,35 +78,30 @@ constructor(node, heading) {
 }
 
 //========//========//========//========//========//========//========//========
+//- CNodeProxy startingNode { get; }
 
-//- CNodeProxy startingNode()
-startingNode() {
-  assert((arguments.length === 0), "invalid call");
+get startingNode() {
   return this._startingNode;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isImpliedSection { get; }
 
-//- bool isImpliedSection()
-isImpliedSection() {
-  assert((arguments.length === 0), "invalid call");
-  return this._startingNode.isHC();
+get isImpliedSection() {
+  return this._startingNode.isHC;
 }
 
 //========//========//========//========//========//========//========//========
+//- COutline parentOutline { get; set; }
 
-//- COutline parentOutline()
-//- void parentOutline(COutline parentOutline)
-parentOutline(parentOutline) {
-  if(arguments.length === 0) {
-    return this._parentOutline;
-  }
-  
-  assert((arguments.length === 1), "invalid call");
+get parentOutline() {
+  return this._parentOutline;
+}
+
+set parentOutline(parentOutline) {
   assert((parentOutline instanceof COutline), "invalid call");
   
-  if(this._parentOutline !== null) {
-    //- i.e. do not re-associate
+  if(this._parentOutline !== null) {//- do not re-associate
     assert((parentOutline === this._parentOutline), "invalid call");
   }
   
@@ -119,18 +109,17 @@ parentOutline(parentOutline) {
 }
 
 //========//========//========//========//========//========//========//========
+//- bool hasNoHeading { get; }
 
-//- bool hasNoHeading()
 //- true if, and only if, no heading was set;
 //  not even createAndSetImpliedHeading() was executed
-hasNoHeading() {
-  assert((arguments.length === 0), "invalid call");
+get hasNoHeading() {
   return (this._heading === null);
 }
 
 //========//========//========//========//========//========//========//========
-
 //- void createAndSetImpliedHeading()
+
 //- calling this is equivalent to the statement:
 //  this section does not contain any heading element
 createAndSetImpliedHeading() {
@@ -141,42 +130,36 @@ createAndSetImpliedHeading() {
 }
 
 //========//========//========//========//========//========//========//========
+//- bool hasImpliedHeading { get; }
 
-//- bool hasImpliedHeading()
-hasImpliedHeading() {
-  assert((arguments.length === 0), "invalid call");
+get hasImpliedHeading() {
   //- i.e. no-heading-at-all does not count as an implied one
   return (this._heading === IMPLIED_HEADING);
 }
 
 //========//========//========//========//========//========//========//========
+//- bool hasHeading { get; }
 
-//- bool hasHeading()
-hasHeading() {
-  assert((arguments.length === 0), "invalid call");
+get hasHeading() {
   let heading = this._heading;
-  
   return (heading instanceof CNodeProxy);
-  //return ((heading !== null) && (heading !== IMPLIED_HEADING));
 }
 
 //========//========//========//========//========//========//========//========
-
-//- CNodeProxy heading()
-//- void heading(CNodeProxy heading)
+//- CNodeProxy heading { get; set; }
 //- when the outliner is done, heading must be one of two:
-//- - null - representing an implied heading
-//- - heading - the first heading element in that section
-heading(heading) {
-  if(arguments.length === 0) {
-    assert((this._heading !== null), "invalid call");//- not done yet
-    if(this._heading === IMPLIED_HEADING) return null;
-    return this._heading;
-  }
-  
-  assert((arguments.length === 1), "invalid call");
+//- null - representing an implied heading, or
+//- heading - the first heading element in that section
+
+get heading() {
+  assert((this._heading !== null), "invalid call");//- not done yet
+  if(this._heading === IMPLIED_HEADING) return null;
+  return this._heading;
+}
+
+set heading(heading) {
   assert((heading instanceof CNodeProxy), "invalid call");
-  assert(heading.isHC(), "invalid call");
+  assert(heading.isHC, "invalid call");
   
   //- i.e. do not overwrite, not even an implied one
   assert((this._heading === null), "invalid call");
@@ -185,8 +168,8 @@ heading(heading) {
 }
 
 //========//========//========//========//========//========//========//========
-
 //- bool isAncestorOf(CSection subsection)
+
 isAncestorOf(subsection) {
   assert((arguments.length === 1), "invalid call");
   assert((subsection instanceof CSection), "invalid call");
@@ -203,27 +186,23 @@ isAncestorOf(subsection) {
 }
 
 //========//========//========//========//========//========//========//========
+//- bool hasParentSection { get; }
 
-//- bool hasParentSection()
-hasParentSection() {
-  assert((arguments.length === 0), "invalid call");
+get hasParentSection() {
   return (this._parentSection !== null);
 }
 
 //========//========//========//========//========//========//========//========
+//- CSection parentSection { get; set; }
 
-//- CSection parentSection()
-//- void parentSection(CSection parentSection)
-parentSection(parentSection) {
-  if(arguments.length === 0) {
-    return this._parentSection;
-  }
-  
-  assert((arguments.length === 1), "invalid call");
+get parentSection() {
+  return this._parentSection;
+}
+
+set parentSection(parentSection) {
   assert((parentSection instanceof CSection), "invalid call");
   
-  if(this._parentSection !== null) {
-    //- i.e. do not re-associate
+  if(this._parentSection !== null) {//- do not re-associate
     assert((this._parentSection === parentSection), "invalid call");
   }
   
@@ -231,34 +210,29 @@ parentSection(parentSection) {
 }
 
 //========//========//========//========//========//========//========//========
-
 //- void addSubSection(CSection section)
+
 addSubSection(subsection) {
   assert((arguments.length === 1), "invalid call");
   assert((subsection instanceof CSection), "invalid call");
   
   this._subsections.push(subsection);
-  subsection.parentSection(this);
+  subsection.parentSection = this;
 }
 
 //========//========//========//========//========//========//========//========
+//- CSection lastSubSection { get; }
 
-//- CSection lastSubSection()
-lastSubSection() {
-  assert((arguments.length === 0), "invalid call");
-  
+get lastSubSection() {
   let ic = this._subsections.length;
-  assert((ic > 0), "CSection.lastSubSection(): "
-    + "the section does not have any subsections");
-  
+  assert((ic > 0), "CSection.lastSubSection: this section has no sub-sections");
   return this._subsections[ic-1];
 }
 
 //========//========//========//========//========//========//========//========
+//- CSection[] subsections { get; }
 
-//- CSection[] subsections()
-subsections() {
-  assert((arguments.length === 0), "invalid call");
+get subsections() {
   //- it might become necessary to create a clone
   return this._subsections;
 }

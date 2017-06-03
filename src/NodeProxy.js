@@ -30,12 +30,11 @@ const rxHC = /^h[1-6]$/i;
 
 module.exports = class CNodeProxy {
 //========//========//========//========//========//========//========//========
-
 //- new CNodeProxy(DomNode node, CNodeProxy parentNode)
 //- new CNodeProxy(node, null) - the root node to traverse
 //- new CNodeProxy(node, node) - a node inside root's subtree
+
 constructor(node, parentNode) {
-  assert((this instanceof CNodeProxy), "invalid call");
   assert((arguments.length === 2), "invalid call");
   
   //- must be a non-null DomNode instance
@@ -50,27 +49,24 @@ constructor(node, parentNode) {
   
 //public:
 
-  //- DomNode domNode()
+  //- DomNode domNode { get; }
 
-  //- bool isDomNode()
-  //- String nodeName()
-  //- CNodeProxy parentNode()
-  //- CNodeProxy firstChild()
-  //- CNodeProxy nextSibling()
+  //- bool isDomNode { get; }
+  //- String nodeName { get; }
+  //- CNodeProxy parentNode { get; }
+  //- CNodeProxy firstChild { get; }
+  //- CNodeProxy nextSibling { get; }
 
-  //- bool isElement()
-  //- bool isHidden()
-  //- String tagName()
-  //- bool isSC()
-  //- bool isSR()
-  //- bool isHC()
-  //- int rank()
+  //- bool isElement { get; }
+  //- bool isHidden { get; }
+  //- String tagName { get; }
+  //- bool isSR { get; }
+  //- bool isSC { get; }
+  //- bool isHC { get; }
+  //- int rank { get; }
 
-  //- CSection parentSection()
-  //- void parentSection(CSection parentSection)
-  
-  //- COutline innerOutline()
-  //- void innerOutline(COutline innerOutline)
+  //- CSection parentSection { get; set; }
+  //- COutline innerOutline { get; set; }
 
 //private:
   
@@ -140,18 +136,10 @@ constructor(node, parentNode) {
 }
 
 //========//========//========//========//========//========//========//========
-
-//- DomNode domNode()
-domNode() {
-  assert((arguments.length === 0), "invalid call");
-  return this._node;
-}
-
-//========//========//========//========//========//========//========//========
-
 //- String toString()
+
 toString() {
-  if(this.isDomNode()) {
+  if(this.isDomNode) {
     return this._node.nodeName;
   } else {
     return Object.toString(this._node);
@@ -159,11 +147,16 @@ toString() {
 }
 
 //========//========//========//========//========//========//========//========
+//- DomNode domNode { get; }
 
-//- bool isDomNode()
-isDomNode() {
-  assert((arguments.length === 0), "invalid call");
-  
+get domNode() {
+  return this._node;
+}
+
+//========//========//========//========//========//========//========//========
+//- bool isDomNode { get; }
+
+get isDomNode() {
   if(this._isDomNode === undefined) {
     try {
       let result = undefined;
@@ -187,24 +180,20 @@ isDomNode() {
       this._isDomNode = false;
     }
   }
-  
   return this._isDomNode;
 }
 
 //========//========//========//========//========//========//========//========
+//- CNodeProxy parentNode { get; }
 
-//- CNodeProxy parentNode()
-parentNode() {
-  assert((arguments.length === 0), "invalid call");
+get parentNode() {
   return this._parentNode;
 }
 
 //========//========//========//========//========//========//========//========
+//- CNodeProxy firstChild { get; }
 
-//- CNodeProxy firstChild()
-firstChild() {
-  assert((arguments.length === 0), "invalid call");
-  
+get firstChild() {
   if(this._firstChild === undefined) {
     let child = this._node.firstChild;
     
@@ -214,16 +203,13 @@ firstChild() {
       this._firstChild = new CNodeProxy(child, this);
     }
   }
-  
   return this._firstChild;
 }
 
 //========//========//========//========//========//========//========//========
+//- CNodeProxy nextSibling { get; }
 
-//- CNodeProxy nextSibling()
-nextSibling() {
-  assert((arguments.length === 0), "invalid call");
-  
+get nextSibling() {
   if(this._nextSibling === undefined) {
     let sibling = this._node.nextSibling;
     
@@ -233,29 +219,23 @@ nextSibling() {
       this._nextSibling = new CNodeProxy(sibling, this._parentNode);
     }
   }
-  
   return this._nextSibling;
 }
 
 //========//========//========//========//========//========//========//========
+//- String nodeName { get; }
 
-//- String nodeName()
-nodeName() {
-  assert((arguments.length === 0), "invalid call");
-  
+get nodeName() {
   if(this._nodeName === undefined) {
     this._nodeName = this._node.nodeName;
   }
-  
   return this._nodeName;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isElement { get; }
 
-//- bool isElement()
-isElement() {
-  assert((arguments.length === 0), "invalid call");
-  
+get isElement() {
   if(this._isElement === undefined) {
     try {
       assert(this.isDomNode(), "not even a node");
@@ -275,105 +255,87 @@ isElement() {
       this._isElement = false;
     }
   }
-  
   return this._isElement;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isHidden { get; }
 
-//- bool isHidden()
-isHidden() {
-  assert((arguments.length === 0), "invalid call");
-  
+get isHidden() {
   if(this._isHidden === undefined) {
-    if(!this.isElement()) {
+    if(!this.isElement) {
       this._isHidden = false;
     } else {
       this._isHidden = this._node.hasAttribute("hidden");
     }
   }
-  
   return this._isHidden;
 }
 
 //========//========//========//========//========//========//========//========
+//- string tagName { get; }
 
-//- string tagName()
-tagName() {
+get tagName() {
   //- by definition (.nodeName === .tagName)
-  return this.nodeName();
+  return this.nodeName;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isSR { get; }
 
-//- bool isSR()
-isSR() {
-  assert((arguments.length === 0), "invalid call");
-  
+get isSR() {
   if(this._isSR === undefined) {
-    let nodeName = this.nodeName();
+    let nodeName = this.nodeName;
     this._isSR = rxSR.test(nodeName);
   }
-  
   return this._isSR;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isSC { get; }
 
-//- bool isSC()
-isSC() {
-  assert((arguments.length === 0), "invalid call");
-  
+get isSC() {
   if(this._isSC === undefined) {
-    let nodeName = this.nodeName();
+    let nodeName = this.nodeName;
     this._isSC = rxSC.test(nodeName);
   }
-  
   return this._isSC;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isHC { get; }
 
-//- bool isHC()
-isHC() {
-  assert((arguments.length === 0), "invalid call");
-  
+get isHC() {
   if(this._isHC === undefined) {
-    let nodeName = this.nodeName();
+    let nodeName = this.nodeName;
     this._isHC = rxHC.test(nodeName);
   }
-  
   return this._isHC;
 }
 
 //========//========//========//========//========//========//========//========
-
-//- int rank()
+//- int rank { get; }
+//
 //- h1 has highest rank, h6 has lowest rank
-rank() {
-  assert((arguments.length === 0), "invalid call");
-  
+get rank() {
   if(this._rank === undefined) {
-    assert(this.isHC(), "invalid call");
-    let nodeName = this.nodeName();
+    assert(this.isHC, "invalid call");
+    let nodeName = this.nodeName;
     let rank = nodeName.charAt(1);
     rank = Number.parseInt(rank);
     this._rank = (-1) * rank;
   }
-  
   return this._rank;
 }
 
 //========//========//========//========//========//========//========//========
+//- CSection parentSection { get; set; }
 
-//- CSection parentSection()
-//- void parentSection(CSection parentSection)
-parentSection(parentSection) {
-  if(arguments.length === 0) {
-    return this._parentSection;
-  }
-  
-  assert((arguments.length === 1), "invalid call");
+get parentSection() {
+  return this._parentSection;
+}
+
+set parentSection(parentSection) {
   assert((parentSection instanceof CSection), "invalid call");
   
   if(this._parentSection !== null) {
@@ -385,15 +347,13 @@ parentSection(parentSection) {
 }
 
 //========//========//========//========//========//========//========//========
+//- COutline innerOutline { get; set; }
 
-//- COutline innerOutline()
-//- void innerOutline(COutline innerOutline)
-innerOutline(innerOutline) {
-  if(arguments.length === 0) {
-    return this._innerOutline;
-  }
-  
-  assert((arguments.length === 1), "invalid call");
+get innerOutline() {
+  return this._innerOutline;
+}
+
+set innerOutline(innerOutline) {
   assert((innerOutline instanceof COutline), "invalid call");
   
   if(this._innerOutline !== null) {

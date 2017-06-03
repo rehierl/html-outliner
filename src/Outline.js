@@ -14,23 +14,21 @@ module.exports = class COutline {
 
 //- new COutline(CNodeProxy owner)
 constructor(node) {
-  assert((this instanceof COutline), "invalid call");
   assert((arguments.length === 1), "invalid call");
-  
   assert((node instanceof CNodeProxy), "invalid call");
-  assert((node.isSR() || node.isSC()), "invalid call");
+  assert((node.isSR || node.isSC), "invalid call");
   
   //- implicitly associate node with this outline
-  node.innerOutline(this);
+  node.innerOutline = this;
 
 //public:
 
-  //- CNodeProxy outlineOwner()
-  //- bool isImpliedOutline()
+  //- CNodeProxy outlineOwner { get; }
+  //- bool isImpliedOutline { get; }
 
   //- void addSection(CSection section)
-  //- CSection lastSection()
-  //- CSection[] sections()
+  //- CSection lastSection { get; }
+  //- CSection[] sections { get; }
 
 //private:
   
@@ -46,50 +44,43 @@ constructor(node) {
 }
 
 //========//========//========//========//========//========//========//========
+//- CNodeProxy outlineOwner { get; }
 
-//- CNodeProxy outlineOwner
-outlineOwner() {
-  assert((arguments.length === 0), "invalid call");
+get outlineOwner() {
   return this._outlineOwner;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isImpliedOutline { get; }
 
-//- bool isImpliedOutline()
-isImpliedOutline() {
-  assert((arguments.length === 0), "invalid call");
-  return this._outlineOwner.isSC();
+get isImpliedOutline() {
+  return this._outlineOwner.isSC;
 }
 
 //========//========//========//========//========//========//========//========
-
 //- void addSection(CSection section)
+
 addSection(section) {
   assert((arguments.length === 1), "invalid call");
   assert((section instanceof CSection), "invalid call");
   
   this._sections.push(section);
-  section.parentOutline(this);
+  section.parentOutline = this;
 }
 
 //========//========//========//========//========//========//========//========
+//- CSection lastSection { get; }
 
-//- CSection lastSection()
-lastSection() {
-  assert((arguments.length === 0), "invalid call");
-  
+get lastSection() {
   let ic = this._sections.length;
-  assert((ic > 0), "Outline.lastSection(): "
-    + "the outline does not have any sections");
-  
+  assert((ic > 0), "Outline.lastSection: this outline has no sections");
   return this._sections[ic-1];
 }
 
 //========//========//========//========//========//========//========//========
+//- CSection[] sections { get; }
 
-//- CSection[] sections()
-sections() {
-  assert((arguments.length === 0), "invalid call");
+get sections() {
   return this._sections;
 }
 

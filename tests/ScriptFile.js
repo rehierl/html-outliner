@@ -12,16 +12,15 @@ const CAlgorithm = require("../src/Algorithm.js");
 
 module.exports = class CScriptFile {
 //========//========//========//========//========//========//========//========
+//- new CScriptFile()
 
-//- public CScriptFile()
 constructor() {
-  assert((this instanceof CScriptFile), "invalid call");
   assert((arguments.length === 0), "invalid call");
   
 //public:
 
-  //- String path
-  //- String pathAbs
+  //- String path { get; }
+  //- String pathAbs { get; }
   //- void read(String relPath, String absPath, String contents)
   //- void run()
   
@@ -52,22 +51,22 @@ constructor() {
 }
 
 //========//========//========//========//========//========//========//========
+//- String path { get; }
 
-//- public String path
 get path() {
   return this._relPath;
 }
 
 //========//========//========//========//========//========//========//========
+//- String pathAbs { get; }
 
-//- public String pathAbs
 get pathAbs() {
   return this._absPath;
 }
 
 //========//========//========//========//========//========//========//========
+//- void read(String relPath, String absPath, String contents)
 
-//- public void read(String relPath, String absPath, String contents)
 read(relPath, absPath, contents) {
   this._relPath = relPath;
   this._absPath = absPath;
@@ -80,8 +79,8 @@ read(relPath, absPath, contents) {
 }
 
 //========//========//========//========//========//========//========//========
+//- void execCommands(String contents)
 
-//- private void execCommands(String contents)
 execCommands(contents) {
   const rxTest = /\$test\./gi;
   const rxCommand = /^\$test\.\$([a-z]+)\(([^\)]*)\)/i;
@@ -146,8 +145,8 @@ execCommands(contents) {
 }
 
 //========//========//========//========//========//========//========//========
+//- void onCmdHtml(String cmd, String text, String selector)
 
-//- private void onCmdHtml(String cmd, String text, String selector)
 onCmdHtml(name, text, selector) {
   assert(!this._htmlContent, format(
     "script [%s]: multiple $html() commands not supported", this._absPath
@@ -157,15 +156,15 @@ onCmdHtml(name, text, selector) {
 }
 
 //========//========//========//========//========//========//========//========
+//- void onCmdOutline(String cmd, String text, String line)
 
-//- private void onCmdOutline(String cmd, String text, String line)
 onCmdOutline(name, text, line) {
   //- currently ignored
 }
 
 //========//========//========//========//========//========//========//========
+//- void run()
 
-//- public void run()
 run() {
   let dom = null;
   

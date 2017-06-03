@@ -12,10 +12,9 @@ const CScriptFile = require("./ScriptFile.js");
 
 module.exports = class CRepository {
 //========//========//========//========//========//========//========//========
+//- new CRepository()
 
-//- public CRepository()
 constructor() {
-  assert((this instanceof CRepository), "invalid call");
   assert((arguments.length === 0), "invalid call");
 
 //public:
@@ -34,8 +33,8 @@ constructor() {
 }
 
 //========//========//========//========//========//========//========//========
+//- CScriptFile getScript(String relPath)
 
-//- public CScriptFile getScript(String relPath)
 getScript(relPath) {
   assert((arguments.length === 1), "invalid call");
   assert(((typeof relPath) === "string"), "invalid call");
@@ -49,8 +48,8 @@ getScript(relPath) {
 }
 
 //========//========//========//========//========//========//========//========
+//- void load(String path)
 
-//- public { (relPath: CScriptFile)* } load(String path)
 load(root) {
   //- "./folder" and "./folder/" => "path-to-parent/folder"
   let absRoot = path.resolve(root);
@@ -97,8 +96,8 @@ load(root) {
 }
 
 //========//========//========//========//========//========//========//========
+//- void readDirRecursive(String dir, String[] files)
 
-//- private void readDirRecursive(String dir, String[] files)
 readDirRecursive(dir, files) {
   let children = fs.readdirSync(dir);
   

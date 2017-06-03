@@ -11,11 +11,10 @@ const COutline = require("./Outline.js");
 
 module.exports = class CContext {
 //========//========//========//========//========//========//========//========
-
 //- new CContext(Anything type, CNodeProxy node,
 //  CSection section, COutline outline)
+
 constructor(type, node, section, outline) {
-  assert((this instanceof CContext), "invalid call");
   assert((arguments.length === 4), "invalid call");
   
   //- type can be anything reasonable
@@ -25,10 +24,10 @@ constructor(type, node, section, outline) {
   
 //public:
 
-  //- Anything type()
-  //- CNodeProxy node()
-  //- CSection currentSection()
-  //- COutline currentOutline()
+  //- Anything type { get; }
+  //- CNodeProxy node { get; }
+  //- CSection currentSection { get; }
+  //- COutline currentOutline { get; }
 
 //private:
 
@@ -54,34 +53,30 @@ constructor(type, node, section, outline) {
 }
 
 //========//========//========//========//========//========//========//========
+//- Anything type { get; }
 
-//- Anything type()
-type() {
-  assert((arguments.length === 0), "invalid call");
+get type() {
   return this._type;
 }
 
 //========//========//========//========//========//========//========//========
+//- CNodeProxy node { get; }
 
-//- CNodeProxy node()
-node() {
-  assert((arguments.length === 0), "invalid call");
+get node() {
   return this._node;
 }
 
 //========//========//========//========//========//========//========//========
+//- CSection currentSection { get; }
 
-//- CSection currentSection()
-currentSection() {
-  assert((arguments.length === 0), "invalid call");
+get currentSection() {
   return this._currentSection;
 }
 
 //========//========//========//========//========//========//========//========
+//- COutline currentOutline { get; }
 
-//- COutline currentOutline()
-currentOutline() {
-  assert((arguments.length === 0), "invalid call");
+get currentOutline() {
   return this._currentOutline;
 }
 
