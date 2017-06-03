@@ -11,73 +11,57 @@ const COutline = require("./Outline.js");
 
 module.exports = class CContext {
 //========//========//========//========//========//========//========//========
-//- new CContext(Anything type, CNodeProxy node,
-//  CSection section, COutline outline)
+//- new CContext(CNodeProxy node, CSection section, COutline outline)
 
-constructor(type, node, section, outline) {
-  assert((arguments.length === 4), "invalid call");
-  
-  //- type can be anything reasonable
+constructor(node, section, outline) {
+  assert((arguments.length === 3), "invalid call");
   assert((node instanceof CNodeProxy), "invalid call");
   assert((section === null) || (section instanceof CSection), "invalid call");
   assert((outline === null) || (outline instanceof COutline), "invalid call");
   
 //public:
 
-  //- Anything type { get; }
   //- CNodeProxy node { get; }
-  //- CSection currentSection { get; }
-  //- COutline currentOutline { get; }
+  //- CSection section { get; }
+  //- COutline outline { get; }
 
 //private:
-
-  //- Anything _type
-  //- used to identify the reason for
-  //  creating this context object
-  this._type = type;
 
   //- CNodeProxy _node
   //- the node that triggered the creation
   //  of this context object
   this._node = node;
   
-  //- CSection _currentSection
+  //- CSection _section
   //- the current section at the time
   //  this context object was created
-  this._currentSection = section;
+  this._section = section;
   
-  //- COutline _currentOutline
+  //- COutline _outline
   //- the current outline at the time
   //  this context object was created
-  this._currentOutline = outline;
+  this._outline = outline;
 }
 
 //========//========//========//========//========//========//========//========
-//- Anything type { get; }
-
-get type() {
-  return this._type;
-}
-
-//========//========//========//========//========//========//========//========
-//- CNodeProxy node { get; }
+//- CNodeProxy Node { get; }
 
 get node() {
   return this._node;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection currentSection { get; }
+//- CSection Section { get; }
 
-get currentSection() {
-  return this._currentSection;
+get section() {
+  return this._section;
 }
 
 //========//========//========//========//========//========//========//========
-//- COutline currentOutline { get; }
+//- COutline outline { get; }
 
-get currentOutline() {
-  return this._currentOutline;
+get outline() {
+  return this._outline;
 }
 
 //========//========//========//========//========//========//========//========
