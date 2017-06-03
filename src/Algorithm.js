@@ -3,8 +3,11 @@
 
 const assert = require("assert");
 const format = require("util").format;
+const errmsg = require("./errorMessages.js");
+const isObjectInstance = require("./isObjectInstance.js");
 
 /* must appear below module.exports (cyclic require statements)
+//- TODO - this could change with ES6 modules
 const CStack = require("./Stack.js");
 const CContext = require("./Context.js");
 const CNodeProxy = require("./NodeProxy.js");
@@ -12,38 +15,41 @@ const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 //*/
 
-//- CContext type flags used
-const CT_IGNORE = 0;//- hidden nodes, or inner sectioning root nodes (SR)
-const CT_SR = 1;//- top-level SRs, inner SRs
-const CT_SC = 2;//- sectioning content nodes (SC)
-const CT_HC = 3;//- heading content (HC)
+//- context type identifier values
+const CT_NONE = -1;//- initial/default context identifier
+const CT_HIDE = 0; //- hidden nodes, inner sectioning root nodes (SR)
+const CT_SR = 1;   //- top-level SR, inner SRs
+const CT_SC = 2;   //- sectioning content nodes (SC)
+const CT_HC = 3;   //- heading content (HC)
 
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
 //- new CAlgorithm() throws AssertionError
 
 constructor() {
-  assert((arguments.length === 0), "invalid call");
+  assert((arguments.length === 0), errmsg.DEVEL);
   
 //public:
 
-  //- COutline createOutline(DomNode domNode)
-  //  throws AssertionError
+  //- COutline createOutline(DomNode node) throws AssertionError
+  //- COutline createOutline(DomNode node, Object options) throws AssertionError
   
 //private:
 
+  //- void validateInput(DomNode node, Object options)
   //- void traverseInTreeOrder()
+
   //- void onEnter()
   //- void onExit()
-
-  //- CContext currentContext()
-  //- bool contextChanged(CContext context)
-  //- void restoreContext(CContext context)
 
   //- void onXXX_enter()
   //- void onXXX_exit()
 
 //private:
+
+  //- Object options
+  //- an options object
+  this.options = null;
 
   //- CNodeProxy startingNode
   //- the SR/SC node that was used to start the algorithm
@@ -51,8 +57,8 @@ constructor() {
   
   //- inner SRs are optional and can be ignored
   //- this flag is used to determine what to do when
-  //  entering an inner SR
-  this.ignoreInnerSR = false;
+  //  entering the next inner SR
+  this.ignoreNextSR = false;
   
   //- CStack<CContext> stack
   //- used to save and restore the current context
@@ -62,6 +68,12 @@ constructor() {
   //- a reference to the current node
   //- contributes to the current context
   this.node = null;
+  
+  //- int type
+  //- the current context type indicator
+  //- in general, its value indicates in which kind
+  //  of subtree we are currently in
+  this.type = CT_NONE;
   
   //- COutline outline
   //- a reference to the current outline
@@ -76,28 +88,26 @@ constructor() {
 
 //========//========//========//========//========//========//========//========
 //- COutline createOutline(DomNode node)
+//- COutline createOutline(DomNode node, Object options)
 
-createOutline(domNode) {
-  assert((arguments.length === 1), "invalid call");
-  this.node = new CNodeProxy(domNode, null);
-  
-  //- must start with a sec content or sec root element
-  assert((this.node.isSR || this.node.isSC),
-    "domNode must be a sectioning element");
-  
-  //- if the root node is itself hidden, node.innerOutline will be null
-  //- disallow hidden root nodes for the moment;
-  //  to make sure outline is set in all the other cases.
-  assert(!this.node.isHidden, "domNode must not be a hidden element");
-  
-  //- traverse the tree and create the outline
+createOutline(node, options) {
+  if(arguments.length === 1) {
+    this.validateInput(node, null);
+  } else if(arguments.length === 2) {
+    this.validateInput(node, options);
+  } else {
+    assert(false, errmsg.DEVEL);
+  }
+
+  this.node = this.startingNode;
   this.traverseInTreeOrder();
   
-  assert((this.startingNode === null), "internal error");
-  assert(this.stack.isEmpty, "internal error");
-  assert((this.node === null), "internal error");
-  assert((this.outline !== null), "internal error");
-  assert((this.section === null), "internal error");
+  assert((this.startingNode === null), errmsg.INVARIANT);
+  assert(this.stack.isEmpty, errmsg.INVARIANT);
+  assert((this.node === null), errmsg.INVARIANT);
+  assert((this.type === CT_NONE), errmsg.INVARIANT);
+  assert((this.outline !== null), errmsg.INVARIANT);
+  assert((this.section === null), errmsg.INVARIANT);
   
   let outline = this.outline;
   this.outline = null;
@@ -105,15 +115,55 @@ createOutline(domNode) {
 }
 
 //========//========//========//========//========//========//========//========
+//- void validateInput(DomNode domNode, Object options)
+
+validateInput(domNode, options) {
+  let node = null;
+  
+  //- check the root node
+  if(true) {
+    assert(isObjectInstance(domNode), errmsg.INVALID_ROOT);
+    node = new CNodeProxy(domNode, null);
+    
+    assert(node.isElement, errmsg.INVALID_ROOT);
+    
+    //- if the root node is itself hidden, node.innerOutline will be null
+    //- disallow hidden root nodes for the moment;
+    //  to make sure outline is set in all the other cases.
+    assert(!node.isHidden, errmsg.INVALID_ROOT);
+    
+    //- must starti with a sec root or a sec content element
+    assert((node.isSR || node.isSC), errmsg.INVALID_ROOT);
+  }
+  
+  //- check the options object
+  if(options === null) {
+    //- use default options only
+    this.options = null;
+  } else {
+    assert(isObjectInstance(options), errmsg.INVALID_OPTIONS);
+    //- TODO - now that's a big one
+    //- currently no external settings supported ...
+    this.options = null;
+  }
+  
+  this.startingNode = node;
+}
+
+//========//========//========//========//========//========//========//========
 //- void traverseInTreeOrder(CNodeProxy node)
 
 traverseInTreeOrder() {
-  this.startingNode = this.node;
   let next = null;
   
   enter: while(this.node !== null) {
     this.onEnter();
-    next = this.node.firstChild;
+    
+    if(this.type === CT_HIDE) {
+      next = null;//- hide all child nodes, if any
+    } else {
+      next = this.node.firstChild;
+    }
     
     if(next !== null) {
       this.node = next;
@@ -122,6 +172,7 @@ traverseInTreeOrder() {
     
     exit: while(this.node !== null) {
       this.onExit();
+      
       next = this.node.nextSibling;
       
       if(next !== null) {
@@ -129,21 +180,25 @@ traverseInTreeOrder() {
         continue enter;
       }
       
-      //- null if node is the starting node
+      //- null, if node is the startingNode
       //- in that case, the walk is over
       next = this.node.parentNode;
       
       if(next === null) {
-        assert(this.node === this.startingNode, "internal error");
-        this.startingNode = null;
-        this.node = null;
-        //this.outline = null;
-        this.section = null;
+        assert(this.stack.isEmpty, errmsg.INVARIANT);
+        assert(this.node === this.startingNode, errmsg.INVARIANT);
+        assert((this.type === CT_NONE), errmsg.INVARIANT);
       }
       
       this.node = next;
     }//- exit
   }//- enter
+  
+  this.startingNode = null;
+  this.node = null;
+  //this.type = CT_NONE;
+  //this.outline = null;
+  this.section = null;
 }
 
 //========//========//========//========//========//========//========//========
@@ -191,7 +246,7 @@ onEnter() {
   }
   
   //# should have left by now
-  assert(false, "internal error");
+  assert(false, errmsg.INVARIANT);
 }
 
 //========//========//========//========//========//========//========//========
@@ -239,7 +294,7 @@ onExit() {
   }
   
   //# should have left by now
-  assert(false, "internal error");
+  assert(false, errmsg.INVARIANT);
 }
 
 //========//========//========//========//========//========//========//========
@@ -251,7 +306,7 @@ onExit() {
 onContext_enter() {
   let context = this.stack.tos;
 
-  if(context.type === CT_IGNORE) {
+  if(context.type === CT_HIDE) {
     //- enter the child of a hidden node
     //- same with inner SRs, if it was decided
     //  to also ignore these
@@ -261,9 +316,9 @@ onContext_enter() {
   else if(context.type === CT_HC) {
     //- enter the child of a heading
     //- could be <strike>, <bold>, etc. ???
-    assert(!this.node.isSR, "invalid html");
-    assert(!this.node.isSC, "invalid html");
-    assert(!this.node.isHC, "invalid html");
+    assert(!this.node.isSR, errmsg.INVALID_HTML);
+    assert(!this.node.isSC, errmsg.INVALID_HTML);
+    assert(!this.node.isHC, errmsg.INVALID_HTML);
   }
 }
 
@@ -279,7 +334,7 @@ onContext_exit() {
     //this.stack.pop();
   }
 
-  else if(context.type === CT_IGNORE) {
+  else if(context.type === CT_HIDE) {
     //- exit the child of a hidden node,
     //  not the hidden node itself
     //- same with inner SRs, if it was decided
@@ -318,11 +373,11 @@ onNode_exit() {
 //========//========//========//========//========
 //- void onHidden_enter(CNodeProxy node)
 
-  onHidden_enter() {
+onHidden_enter() {
   //- ignore hidden nodes and any child nodes
   this.stack.push(new CContext(
-    CT_IGNORE, this.node, this.outline, this.section
-  ));
+    this.node, this.type, this.outline, this.section));
+  this.type = CT_HIDE;
 }
 
 //========//========//========//========//========
@@ -330,10 +385,11 @@ onNode_exit() {
 
 onHidden_exit() {
   let context = this.stack.pop();
-  assert((context.type === CT_IGNORE), "internal error");
-  assert((context.node === this.node), "internal error");
-  assert((context.outline === this.outline), "internal error");
-  assert((context.section === this.section), "internal error");
+  assert((context.node === this.node), errmsg.INVARIANT);
+  assert((context.type !== CT_HIDE), errmsg.INVARIANT);
+  assert((context.outline === this.outline), errmsg.INVARIANT);
+  assert((context.section === this.section), errmsg.INVARIANT);
+  this.type = context.type;
 }
 
 //========//========//========//========//========//========//========//========
@@ -344,18 +400,23 @@ onHidden_exit() {
 //- void onSR_enter(CNodeProxy node)
 
 onSR_enter() {
-  if(this.ignoreInnerSR === true) {
+  if(this.ignoreNextSR === true) {
+    //- this is a next/inner SR, ignore it
+    
     this.stack.push(new CContext(
-      CT_IGNORE, this.node, this.outline, this.section));
-    return;//- ignore this inner SR
+      this.node, this.type, this.outline, this.section));
+    
+    //- indicate that all child nodes, if any, need to be ignored
+    this.type = CT_HIDE;
+    return;//- we are done here
   }
   
   if(this.outline === null) {
     //- this.rootNode is a SR, it must be processed
     //- all other (inner) SRs are therefore optional;
     //  they must not contribute to ancestor SRs/SCs
-    assert((this.rootNode === this.node), "internal error");
-    this.ignoreInnerSR = false;//- @TODO make optional
+    assert((this.node === this.rootNode), errmsg.INVARIANT);
+    this.ignoreNextSR = false;//- TODO - make optional
   }
   
   else {//- if(this.outline !== null) {
@@ -378,10 +439,12 @@ onSR_enter() {
 
     //- push/save the current context
     this.stack.push(new CContext(
-      CT_SR, this.node, this.outline, this.section
-    ));
+      this.node, this.type, this.outline, this.section));
   }
 
+  //- indicate that we have entered a SR
+  this.type = CT_SR;
+  
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
   this.outline = new COutline(this.node);
@@ -399,12 +462,12 @@ onSR_enter() {
 //- void onSR_exit(CNodeProxy node)
 
 onSR_exit() {
-  if(this.ignoreInnerSR === true) {
+  if(this.ignoreNextSR === true) {
     let context = this.stack.pop();
-    assert((context.type === CT_IGNORE), "internal error");
-    assert((context.node === this.node), "internal error");
-    assert((context.outline === this.outline), "internal error");
-    assert((context.section === this.section), "internal error");
+    assert((context.type === CT_HIDE), errmsg.INVARIANT);
+    assert((context.node === this.node), errmsg.INVARIANT);
+    assert((context.outline === this.outline), errmsg.INVARIANT);
+    assert((context.section === this.section), errmsg.INVARIANT);
     return;//- ignore this inner SR
   }
   
@@ -417,7 +480,7 @@ onSR_exit() {
   }
 
   if(this.stack.isEmpty) {
-    assert((this.node === this.startingNode), "internal error");
+    assert((this.node === this.startingNode), errmsg.INVARIANT);
     return;//- the walk is over
   }
 
@@ -425,10 +488,10 @@ onSR_exit() {
   assert(false, "TODO: still need to test this...");
   
   let context = this.stack.pop();
-  assert((context.type === CT_SR), "internal error");
-  assert((context.node === this.node), "internal error");
-  assert((context.outline !== this.outline), "internal error");
-  assert((context.section !== this.section), "internal error");
+  assert((context.type === CT_SR), errmsg.INVARIANT);
+  assert((context.node === this.node), errmsg.INVARIANT);
+  assert((context.outline !== this.outline), errmsg.INVARIANT);
+  assert((context.section !== this.section), errmsg.INVARIANT);
 
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
@@ -455,8 +518,8 @@ onSC_enter() {
   if(this.outline === null) {
     //- this.rootNode is a SC, not a SR
     //- all SRs are therefore optional
-    assert((this.node === this.rootNode), "internal error");
-    this.ignoreInnerSR = false;//- @TODO make optional
+    assert((this.node === this.rootNode), errmsg.INVARIANT);
+    this.ignoreNextSR = false;//- TODO - make optional
   }
   
   else {//- if(this.outline !== null) {
@@ -500,16 +563,16 @@ onSC_exit() {
   }
 
   if(this.stack.isEmpty) {
-    assert((this.node === this.startingNode), "internal error");
+    assert((this.node === this.startingNode), errmsg.INVARIANT);
     return;//- the walk is over
   }
 
   //- this SC is child of some other sectioning element
   let context = this.stack.pop();
-  assert((context.type === CT_SC), "internal error");
-  assert((context.node === this.node), "internal error");
-  assert((context.outline !== this.outline), "internal error");
-  assert((context.section !== this.section), "internal error");
+  assert((context.type === CT_SC), errmsg.INVARIANT);
+  assert((context.node === this.node), errmsg.INVARIANT);
+  assert((context.outline !== this.outline), errmsg.INVARIANT);
+  assert((context.section !== this.section), errmsg.INVARIANT);
 
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
@@ -571,16 +634,16 @@ onHC_enter() {
   //  reaching this point, the first section will always have a heading
   //- when taking the following code into account, and when reaching
   //  this point, all sections in the current SR/SC have existing headings
-  assert(!this.section.hasImpliedHeading, "internal error");
+  assert(!this.section.hasImpliedHeading, errmsg.INVARIANT);
   
   if(true) {//- just an optional performance shortcut
     let lastSection = this.outline.lastSection;
     
     //- lastSection always has a heading - see above
-    assert(lastSection.hasHeading, "internal error");
+    assert(lastSection.hasHeading, errmsg.INVARIANT);
     //- lastSection must always be on the same chain
     assert((lastSection === this.section)
-      || lastSection.isAncestorOf(this.section), "internal error");
+      || lastSection.isAncestorOf(this.section), errmsg.INVARIANT);
     
     //- if we already know, that we will have to add the new section
     //  to the current outline, then there is no need to go up the chain
@@ -603,7 +666,7 @@ onHC_enter() {
     //- parentSection.heading.rank will fail for non-headings;
     //  rank is only defined for existing headings; i.e. not for
     //  implied ones, and certainly not for null values.
-    assert(parentSection.hasHeading, "internal error");
+    assert(parentSection.hasHeading, errmsg.INVARIANT);
 
     //- if(node.rank < currentSection.heading.rank), then
     //  add the new section as a sub-section to currentSection,
@@ -637,7 +700,7 @@ onHC_enter() {
       //example: body; h2-A; h1-B /body
       //- enter h1-B; add a new section to the current outline
       //
-      assert((parentSection === this.outline.lastSection), "internal error");
+      assert((parentSection === this.outline.lastSection), errmsg.INVARIANT);
       let section = new CSection(this.node, this.node);
       this.outline.addSection(section);
       this.section = section;
@@ -660,10 +723,10 @@ onHC_enter() {
 
 onHC_exit() {
   let context = this.stack.pop();
-  assert((context.type === CT_HC), "internal error");
-  assert((context.node === this.node), "internal error");
-  assert((context.outline === this.outline), "internal error");
-  assert((context.section === this.section), "internal error");
+  assert((context.type === CT_HC), errmsg.INVARIANT);
+  assert((context.node === this.node), errmsg.INVARIANT);
+  assert((context.outline === this.outline), errmsg.INVARIANT);
+  assert((context.section === this.section), errmsg.INVARIANT);
 }
 
 //========//========//========//========//========//========//========//========

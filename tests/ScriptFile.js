@@ -7,6 +7,7 @@ const format = require("util").format;
 const JSDOM = require("jsdom").JSDOM;
 
 /* must appear below module.exports (cyclic require statements)
+//- TODO - this could change with ES6 modules
 const CAlgorithm = require("../src/Algorithm.js");
 //*/
 

@@ -2,13 +2,31 @@
 html-outliner
 ===============
 
-**volatile / alpha**
+**volatile / pre-alpha**
 
 The goal of this repository is to get a clear understanding of HTML's outline
 algorithm by implementing it using JavaScript and Node.js.
 
 * [Algorithm.js](./src/Algorithm.js) is this repository's main source file.
-* Not yet published on [npmjs.com](https://www.npmjs.com/)
+
+## TODOs
+
+* get it running ...
+* add support for an options object (inner SRs, non-standard headings, etc.)
+* use throw statements instead of asserts
+* publish on [npmjs.com](https://www.npmjs.com/)
+* and many more things to do ...
+
+## Main Features
+
+* completely ignores any hidden elements
+  -- the outliner won't even visit their child nodes
+* (optional) read-only access is possible
+  -- the outliner won't modify the dom tree in any way.
+* (optional) ignore inner sectioning root elements
+  -- if chosen, these will be treated as if they were hidden elements.
+* (optional) support for non-standard heading elements (e.g. &lt;h&gt;)
+  -- these will be treated like &lt;h1&gt; heading elements (highest rank)
 
 ## Related Links
 

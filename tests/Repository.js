@@ -7,6 +7,7 @@ const path = require("path");
 const fs = require("fs");
 
 /* must appear below module.exports (cyclic require statements)
+//- TODO - this could change with ES6 modules
 const CScriptFile = require("./ScriptFile.js");
 //*/
 

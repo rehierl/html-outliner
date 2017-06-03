@@ -2,8 +2,10 @@
 "use strict";
 
 const assert = require("assert");
+const errmsg = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
+//- TODO - this could change with ES6 modules
 const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
@@ -11,51 +13,45 @@ const COutline = require("./Outline.js");
 
 module.exports = class CContext {
 //========//========//========//========//========//========//========//========
-//- new CContext(CNodeProxy node, CSection section, COutline outline)
+//- new CContext(CNodeProxy node, Anything type,
+//  COutline outline, CSection section)
 
-constructor(type, node, section, outline) {
-  assert((arguments.length === 4), "invalid call");
+constructor(node, type, outline, section) {
+  assert((arguments.length === 4), errmsg.DEVEL);
+  assert((node instanceof CNodeProxy), errmsg.DEVEL);
   //- type can be anything reasonable
-  assert((node instanceof CNodeProxy), "invalid call");
-  assert((section === null) || (section instanceof CSection), "invalid call");
-  assert((outline === null) || (outline instanceof COutline), "invalid call");
+  assert((outline === null) || (outline instanceof COutline), errmsg.DEVEL);
+  assert((section === null) || (section instanceof CSection), errmsg.DEVEL);
   
 //public:
 
-  //- Anything type { get; }
   //- CNodeProxy node { get; }
-  //- CSection section { get; }
+  //- Anything type { get; }
   //- COutline outline { get; }
+  //- CSection section { get; }
 
 //private:
-
-  //- Anything _type
-  //- the type identifier associated
-  //  with this context
-  //- mainly used to ignore/hide nodes
-  this._type = type;
 
   //- CNodeProxy _node
   //- the node that triggered the creation
   //  of this context object
   this._node = node;
-  
-  //- CSection _section
-  //- the current section at the time
-  //  this context object was created
-  this._section = section;
+
+  //- Anything _type
+  //- the current type identifier
+  //  associated with this context
+  //- mainly used to ignore/hide nodes
+  this._type = type;
   
   //- COutline _outline
   //- the current outline at the time
   //  this context object was created
   this._outline = outline;
-}
-
-//========//========//========//========//========//========//========//========
-//- Anything type { get; }
-
-get type() {
-  return this._type;
+  
+  //- CSection _section
+  //- the current section at the time
+  //  this context object was created
+  this._section = section;
 }
 
 //========//========//========//========//========//========//========//========
@@ -66,10 +62,10 @@ get node() {
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection section { get; }
+//- Anything type { get; }
 
-get section() {
-  return this._section;
+get type() {
+  return this._type;
 }
 
 //========//========//========//========//========//========//========//========
@@ -77,6 +73,13 @@ get section() {
 
 get outline() {
   return this._outline;
+}
+
+//========//========//========//========//========//========//========//========
+//- CSection section { get; }
+
+get section() {
+  return this._section;
 }
 
 //========//========//========//========//========//========//========//========

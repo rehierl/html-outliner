@@ -3,10 +3,11 @@
 
 const assert = require("assert");
 const format = require("util").format;
-
+const errmsg = require("./errorMessages.js");
 const isObjectInstance = require("./isObjectInstance.js");
 
 /* must appear below module.exports (cyclic require statements)
+//- TODO - this could change with ES6 modules
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 //*/
@@ -14,37 +15,45 @@ const COutline = require("./Outline.js");
 //========//========//========//========//========//========//========//========
 
 //- (DomNode node).nodeType values
+//- used to test if a node represents an element
 const ELEMENT_NODE = 1;
 
 //- a regular expression used to test if an element is a
 //  sectioning root (SR) element
+//- TODO - allow other/additional tags
 const rxSR = /^(blockquote|body|details|dialog|fieldset|figure|td)$/i;
 
 //- a regular expression used to test if an element is a
 //  sectioning content (SC) element
+//- TODO - allow other/additional tags
 const rxSC = /^(article|aside|nav|section)$/i;
 
-//- a regular expression used to test if an element is a
-//  heading content element; i.e. h1, h2, h3, h4, h5, h6
-const rxHC = /^h[1-6]$/i;
+//- a regular expression used to test if an element represents a
+//  heading content element; e.g. h1, h2, h3, h4, h5, h6
+//- TODO - allow other/additional tags
+const rxHC = /^(h[1-6])$/i;
+
+//- a regular expression used to test if the tag of a heading
+//  element holds a rank value; highest rank if that isn't the case
+const rxHR = /^h[1-6]$/i;
 
 module.exports = class CNodeProxy {
 //========//========//========//========//========//========//========//========
 //- new CNodeProxy(DomNode node, CNodeProxy parentNode)
 //- new CNodeProxy(node, null) - the root node to traverse
-//- new CNodeProxy(node, node) - a node inside root's subtree
+//- new CNodeProxy(node, node) - a node inside the root's sub-tree
 
 constructor(node, parentNode) {
-  assert((arguments.length === 2), "invalid call");
+  assert((arguments.length === 2), errmsg.DEVEL);
   
   //- must be a non-null DomNode instance
-  assert(isObjectInstance(node), "invalid call");
+  assert(isObjectInstance(node), errmsg.DEVEL);
 
   if(parentNode === null) {
-    //- used to create a root node
+    //- represents the starting root node
   } else {
-    //- parentNode must be a CNodeProxy instance
-    assert((parentNode instanceof CNodeProxy), "invalid call");
+    //- represents a node inside the root's sub-tree
+    assert((parentNode instanceof CNodeProxy), errmsg.DEVEL);
   }
   
 //public:
@@ -160,20 +169,20 @@ get isDomNode() {
   if(this._isDomNode === undefined) {
     try {
       let result = undefined;
-      assert(isObjectInstance(this._node), "not even an object");
+      assert(isObjectInstance(this._node));//- not even an object
       
       result = this._node.nodeType;
-      assert((typeof result === "number"), "not a node");
-      assert(((result % 1) === 0), "not a node");
+      assert(typeof result === "number");//- not a node
+      assert((result % 1) === 0);//- not a node
       
       result = this._node.nodeName;//- same as .tagName
-      assert((typeof result === "string"), "not a node");
+      assert(typeof result === "string");//- not a node
 
       result = this._node.firstChild;
-      assert(((result === null) || isObjectInstance(result)), "not a node");
+      assert((result === null) || isObjectInstance(result));//- not a node
 
       result = this._node.nextSibling;
-      assert(((result === null) || isObjectInstance(result)), "not a node");
+      assert((result === null) || isObjectInstance(result));//- not a node
 
       this._isDomNode = true;
     } catch(error) {
@@ -238,17 +247,17 @@ get nodeName() {
 get isElement() {
   if(this._isElement === undefined) {
     try {
-      assert(this.isDomNode(), "not even a node");
+      assert(this.isDomNode());//- not even a dom node
       let result = undefined;
       
       result = this._node.nodeType;
-      assert((result === ELEMENT_NODE), "not an element");
+      assert(result === ELEMENT_NODE);//- not an element
       
       result = this._node.hasAttribute("hidden");
-      assert((typeof result === "boolean"), "not an element");
+      assert(typeof result === "boolean");//- not an element
       
       result = this._node.tagName;//- same as .nodeName
-      assert((typeof result === "string"), "not an element");
+      assert(typeof result === "string");//- not an element
       
       this._isElement = true;
     } catch(error) {
@@ -315,15 +324,20 @@ get isHC() {
 
 //========//========//========//========//========//========//========//========
 //- int rank { get; }
-//
 //- h1 has highest rank, h6 has lowest rank
+
 get rank() {
   if(this._rank === undefined) {
-    assert(this.isHC, "invalid call");
+    assert(this.isHC, errmsg.DEVEL);
     let nodeName = this.nodeName;
-    let rank = nodeName.charAt(1);
-    rank = Number.parseInt(rank);
-    this._rank = (-1) * rank;
+    let rank = -1;
+    
+    if(rxHR.test(nodeName)) {
+      rank = nodeName.charAt(1);
+      rank = (-1) * Number.parseInt(rank);
+    }
+    
+    this._rank = rank;
   }
   return this._rank;
 }
@@ -336,11 +350,11 @@ get parentSection() {
 }
 
 set parentSection(parentSection) {
-  assert((parentSection instanceof CSection), "invalid call");
+  assert((parentSection instanceof CSection), errmsg.DEVEL);
   
   if(this._parentSection !== null) {
     //- i.e. do not re-associate
-    assert((this._parentSection === parentSection), "invalid call");
+    assert((this._parentSection === parentSection), errmsg.DEVEL);
   }
   
   this._parentSection = parentSection;
@@ -354,11 +368,11 @@ get innerOutline() {
 }
 
 set innerOutline(innerOutline) {
-  assert((innerOutline instanceof COutline), "invalid call");
+  assert((innerOutline instanceof COutline), errmsg.DEVEL);
   
   if(this._innerOutline !== null) {
     //- i.e. do not re-associate
-    assert((this._innerOutline === innerOutline), "invalid call");
+    assert((this._innerOutline === innerOutline), errmsg.DEVEL);
   }
   
   this._innerOutline = innerOutline;

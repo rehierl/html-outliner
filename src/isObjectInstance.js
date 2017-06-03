@@ -2,6 +2,7 @@
 "use strict";
 
 const assert = require("assert");
+const errmsg = require("./errorMessages.js");
 
 module.exports = isObjectInstance;
 
@@ -13,7 +14,7 @@ module.exports = isObjectInstance;
 //- note: Node.js's global isObject() function
 //  will return true, if value is a function!
 function isObjectInstance(value) {
-  assert((arguments.length === 1), "invalid call");
+  assert((arguments.length === 1), errmsg.DEVEL);
   if(value === null) return false;
   if((typeof value) !== "object") return false;
   return true;
