@@ -62,7 +62,7 @@ constructor() {
   
   //- CSection currentSection
   //- a reference to the current section
-  //- contributes to the current context
+  //- contributes to the current context (optional)
   this.currentSection = null;
 }
 
@@ -74,17 +74,12 @@ createOutline(domNode) {
   let node = new CNodeProxy(domNode, null);
   
   //- must start with a sec content or sec root element
-  assert((node.isSC || node.isSR), format(
-    "can only create an outline for a "
-    + "sectioning content or a sectioning root element"
-  ));
+  assert((node.isSR || node.isSC), "domNode must be a sectioning element");
   
   //- if the root node is itself hidden, node.innerOutline will be null
-  //- disallow hidden root nodes for the moment to make sure outline is
-  //  set in all the other cases.
-  assert(!node.isHidden, format(
-    "can't create the outline for a hidden element"
-  ));
+  //- disallow hidden root nodes for the moment;
+  //  to make sure outline is set in all the other cases.
+  assert(!node.isHidden, "domNode must not be a hidden element");
   
   this.traverseInTreeOrder(node);
   
@@ -233,6 +228,9 @@ onExit(node) {
 }
 
 //========//========//========//========//========//========//========//========
+//# context related operations
+
+//========//========//========//========//========
 //- CContext currentContext(Anything type, CNodeProxy node)
 
 currentContext(type, node) {
@@ -606,14 +604,14 @@ onHC_enter(node) {
     //  otherwise go up the chain/hierarchy
     if(node.rank < parentSection.heading.rank) {
       //
-      //example: body, h1:A, h2:B, /body
-      //- entering h2:B, won't loop, add subsection to h1:A
+      //example: body; h1-A; h2-B; /body
+      //- enter h2-B; won't loop; add subsection to h1-A
       //
-      //example: body, h1:A, h2:B, h3:C /body
-      //- entering h3:C, won't loop, add subsection to h2:B
+      //example: body; h1-A; h2-B; h3-C /body
+      //- enter h3-C; won't loop; add subsection to h2-B
       //
-      //example: body, h1:A, h2:B, h2:C /body
-      //- entering h2:C, loop once, add subsection to h1:A
+      //example: body; h1-A; h2-B; h2-C /body
+      //- enter h2-C; loop once; add subsection to h1-A
       //
       let section = new CSection(node, node);
       parentSection.addSubSection(section);
@@ -626,11 +624,11 @@ onHC_enter(node) {
     //  add the new implied section to the current outline
     if(!parentSection.hasParentSection) {
       //
-      //example: body, h1:A, h1:B /body
-      //- entering h1:B, add a new section to the current outline
+      //example: body; h1-A; h1-B /body
+      //- enter h1-B; add a new section to the current outline
       //
-      //example: body, h2:A, h1:B /body
-      //- entering h1:B, add a new section to the current outline
+      //example: body; h2-A; h1-B /body
+      //- enter h1-B; add a new section to the current outline
       //
       let section = new CSection(node, node);
       this.currentOutline.addSection(section);
