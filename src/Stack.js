@@ -2,7 +2,8 @@
 "use strict";
 
 const assert = require("assert");
-const errmsg = requore("./errorMessages.js");
+
+const err = require("./errorMessages.js");
 
 /* must appear below module.exports
 //- TODO - this could change with ES6 modules
@@ -14,7 +15,7 @@ module.exports = class CStack {
 //- new CStack()
 
 constructor() {
-  assert((arguments.length === 0), errmsg.DEVEL);
+  assert((arguments.length === 0), err.DEVEL);
   
 //public:
 
@@ -35,8 +36,8 @@ constructor() {
 //- void push(CContext context)
 
 push(context) {
-  assert((arguments.length === 1), errmsg.DEVEL);
-  assert((context instanceof CContext), errmsg.DEVEL);
+  assert((arguments.length === 1), err.DEVEL);
+  assert((context instanceof CContext), err.DEVEL);
   this._buffer.push(context);
 }
 
@@ -44,9 +45,9 @@ push(context) {
 //- CContext pop()
 
 pop() {
-  assert((arguments.length === 0), errmsg.DEVEL);
+  assert((arguments.length === 0), err.DEVEL);
   let len = this._buffer.length;
-  assert((len > 0), errmsg.INVARIANT);
+  assert((len > 0), err.INVARIANT);
   return this._buffer.pop();
 }
 
@@ -55,7 +56,7 @@ pop() {
 
 get tos() {
   let len = this._buffer.length;
-  assert((len > 0), errmsg.INVARIANT);
+  assert((len > 0), err.INVARIANT);
   return this._buffer[len-1];
 }
 

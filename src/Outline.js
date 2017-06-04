@@ -3,7 +3,8 @@
 
 const assert = require("assert");
 const format = require("util").format;
-const errmsg = require("./errorMessages.js");
+
+const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
@@ -16,9 +17,9 @@ module.exports = class COutline {
 
 //- new COutline(CNodeProxy owner)
 constructor(node) {
-  assert((arguments.length === 1), errmsg.DEVEL);
-  assert((node instanceof CNodeProxy), errmsg.DEVEL);
-  assert((node.isSR || node.isSC), errmsg.INVARIANT);
+  assert((arguments.length === 1), err.DEVEL);
+  assert((node instanceof CNodeProxy), err.DEVEL);
+  assert((node.isSR || node.isSC), err.INVARIANT);
   
   //- implicitly associate node with this outline
   node.innerOutline = this;
@@ -63,8 +64,8 @@ get isImpliedOutline() {
 //- void addSection(CSection section)
 
 addSection(section) {
-  assert((arguments.length === 1), errmsg.DEVEL);
-  assert((section instanceof CSection), errmsg.DEVEL);
+  assert((arguments.length === 1), err.DEVEL);
+  assert((section instanceof CSection), err.DEVEL);
   
   this._sections.push(section);
   section.parentOutline = this;
@@ -75,7 +76,7 @@ addSection(section) {
 
 get lastSection() {
   let len = this._sections.length;
-  assert((len > 0), errmsg.INVARIANT);
+  assert((len > 0), err.INVARIANT);
   return this._sections[len-1];
 }
 

@@ -6,6 +6,8 @@ const format = require("util").format;
 const path = require("path");
 const fs = require("fs");
 
+const err = require("./errorMessages.js");
+
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
 const CScriptFile = require("./ScriptFile.js");
@@ -16,7 +18,7 @@ module.exports = class CRepository {
 //- new CRepository()
 
 constructor() {
-  assert((arguments.length === 0), "invalid call");
+  assert((arguments.length === 0), err.DEVEL);
 
 //public:
 
@@ -37,9 +39,9 @@ constructor() {
 //- CScriptFile getScript(String relPath)
 
 getScript(relPath) {
-  assert((arguments.length === 1), "invalid call");
-  assert(((typeof relPath) === "string"), "invalid call");
-  assert((this._scriptsMap !== null), "invalid call");
+  assert((arguments.length === 1), err.DEVEL);
+  assert(((typeof relPath) === "string"), err.DEVEL);
+  assert((this._scriptsMap !== null), err.DEVEL);
   
   assert(this._scriptsMap.hasOwnProperty(relPath), format(
     "script [%s] not found", relPath

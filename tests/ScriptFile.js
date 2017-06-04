@@ -4,6 +4,7 @@
 const assert = require("assert");
 const format = require("util").format;
 
+const err = require("./errorMessages.js");
 const JSDOM = require("jsdom").JSDOM;
 
 /* must appear below module.exports (cyclic require statements)
@@ -16,7 +17,7 @@ module.exports = class CScriptFile {
 //- new CScriptFile()
 
 constructor() {
-  assert((arguments.length === 0), "invalid call");
+  assert((arguments.length === 0), err.DEVEL);
   
 //public:
 

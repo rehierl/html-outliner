@@ -2,7 +2,8 @@
 "use strict";
 
 const assert = require("assert");
-const errmsg = require("./errorMessages.js");
+
+const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
@@ -17,11 +18,11 @@ module.exports = class CContext {
 //  COutline outline, CSection section)
 
 constructor(node, type, outline, section) {
-  assert((arguments.length === 4), errmsg.DEVEL);
-  assert((node instanceof CNodeProxy), errmsg.DEVEL);
+  assert((arguments.length === 4), err.DEVEL);
+  assert((node instanceof CNodeProxy), err.DEVEL);
   //- type can be anything reasonable
-  assert((outline === null) || (outline instanceof COutline), errmsg.DEVEL);
-  assert((section === null) || (section instanceof CSection), errmsg.DEVEL);
+  assert((outline === null) || (outline instanceof COutline), err.DEVEL);
+  assert((section === null) || (section instanceof CSection), err.DEVEL);
   
 //public:
 

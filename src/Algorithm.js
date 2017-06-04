@@ -3,11 +3,13 @@
 
 const assert = require("assert");
 const format = require("util").format;
-const errmsg = require("./errorMessages.js");
+
+const err = require("./errorMessages.js");
 const isObjectInstance = require("./isObjectInstance.js");
 
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
+const COptions = require("./Options.js");
 const CStack = require("./Stack.js");
 const CContext = require("./Context.js");
 const CNodeProxy = require("./NodeProxy.js");
@@ -27,7 +29,7 @@ module.exports = class CAlgorithm {
 //- new CAlgorithm() throws AssertionError
 
 constructor() {
-  assert((arguments.length === 0), errmsg.DEVEL);
+  assert((arguments.length === 0), err.DEVEL);
   
 //public:
 
@@ -36,7 +38,10 @@ constructor() {
   
 //private:
 
-  //- void validateInput(DomNode node, Object options)
+  //- void validateDomNode(DomNode domNode)
+  //- void validateOptionsArg(Object optionsArg)
+  //- void validateOptionsArg(String optionsArg)
+
   //- void traverseInTreeOrder()
 
   //- void onEnter()
@@ -48,8 +53,8 @@ constructor() {
 //private:
 
   //- Object options
-  //- an options object
-  this.options = null;
+  //- an options object initialized to the default options
+  this.options = new COptions();
 
   //- CNodeProxy startingNode
   //- the SR/SC node that was used to start the algorithm
@@ -60,30 +65,29 @@ constructor() {
   //  entering the next inner SR
   this.ignoreNextSR = false;
   
+  {//- current context; see CContext class
+    //- CNodeProxy node
+    //- a reference to the current node
+    this.node = null;
+
+    //- int type
+    //- the current context type indicator
+    //- in general, its value indicates in which kind
+    //  of subtree we are currently in
+    this.type = CT_NONE;
+
+    //- COutline outline
+    //- a reference to the current outline
+    this.outline = null;
+
+    //- CSection section
+    //- a reference to the current section
+    this.section = null;
+  }//- current context
+  
   //- CStack<CContext> stack
   //- used to save and restore the current context
   this.stack = new CStack();
-  
-  //- CNodeProxy node
-  //- a reference to the current node
-  //- contributes to the current context
-  this.node = null;
-  
-  //- int type
-  //- the current context type indicator
-  //- in general, its value indicates in which kind
-  //  of subtree we are currently in
-  this.type = CT_NONE;
-  
-  //- COutline outline
-  //- a reference to the current outline
-  //- contributes to the current context
-  this.outline = null;
-  
-  //- CSection section
-  //- a reference to the current section
-  //- contributes to the current context (optional)
-  this.section = null;
 }
 
 //========//========//========//========//========//========//========//========
@@ -92,22 +96,25 @@ constructor() {
 
 createOutline(node, options) {
   if(arguments.length === 1) {
-    this.validateInput(node, null);
+    this.validateDomNode(node);
   } else if(arguments.length === 2) {
-    this.validateInput(node, options);
+    this.validateDomNode(node);
+    this.validateOptionsArg(options);
   } else {
-    assert(false, errmsg.DEVEL);
+    assert(false, err.DEVEL);
   }
 
-  this.node = this.startingNode;
   this.traverseInTreeOrder();
   
-  assert((this.startingNode === null), errmsg.INVARIANT);
-  assert(this.stack.isEmpty, errmsg.INVARIANT);
-  assert((this.node === null), errmsg.INVARIANT);
-  assert((this.type === CT_NONE), errmsg.INVARIANT);
-  assert((this.outline !== null), errmsg.INVARIANT);
-  assert((this.section === null), errmsg.INVARIANT);
+  //* verify that we have a clean exit
+  //assert(this.options.isDefault, err.INVARIANT);
+  assert((this.startingNode === null), err.INVARIANT);
+  assert((this.node === null), err.INVARIANT);
+  assert((this.type === CT_NONE), err.INVARIANT);
+  assert((this.outline !== null), err.INVARIANT);
+  assert((this.section === null), err.INVARIANT);
+  assert(this.stack.isEmpty, err.INVARIANT);
+  //*/
   
   let outline = this.outline;
   this.outline = null;
@@ -115,45 +122,51 @@ createOutline(node, options) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void validateInput(DomNode domNode, Object options)
+//- void validateDomNode(DomNode domNode)
 
-validateInput(domNode, options) {
-  let node = null;
+validateDomNode(domNode) {
+  assert(isObjectInstance(domNode), err.INVALID_ROOT);
+  let node = new CNodeProxy(domNode, null);
+
+  assert(node.isElement, err.INVALID_ROOT);
+
+  //- if the root node is itself hidden, node.innerOutline will be null
+  //- disallow hidden root nodes for the moment;
+  //  to make sure outline is set in all the other cases.
+  assert(!node.isHidden, err.INVALID_ROOT);
+
+  //- must starti with a sec root or a sec content element
+  assert((node.isSR || node.isSC), err.INVALID_ROOT);
   
-  //- check the root node
-  if(true) {
-    assert(isObjectInstance(domNode), errmsg.INVALID_ROOT);
-    node = new CNodeProxy(domNode, null);
-    
-    assert(node.isElement, errmsg.INVALID_ROOT);
-    
-    //- if the root node is itself hidden, node.innerOutline will be null
-    //- disallow hidden root nodes for the moment;
-    //  to make sure outline is set in all the other cases.
-    assert(!node.isHidden, errmsg.INVALID_ROOT);
-    
-    //- must starti with a sec root or a sec content element
-    assert((node.isSR || node.isSC), errmsg.INVALID_ROOT);
-  }
-  
-  //- check the options object
-  if(options === null) {
-    //- use default options only
-    this.options = null;
-  } else {
-    assert(isObjectInstance(options), errmsg.INVALID_OPTIONS);
-    //- TODO - now that's a big one
-    //- currently no external settings supported ...
-    this.options = null;
-  }
-  
+  //- seems alright; use it
   this.startingNode = node;
+}
+
+//========//========//========//========//========//========//========//========
+//- void validateOptionsArg(Object optionsArg)
+//- void validateOptionsArg(String optionsArg)
+
+validateOptionsArg(optionsArg) {
+  let options = new COptions();
+  
+  try {
+    //- an options argument; i.e. { (option: value)* }
+    //- a JSON string that can be parsed into an options argument
+    options.combine(optionsArg);
+  } catch(error) {
+    //- TODO - better error handling
+    assert(false, err.INVALID_OTPIONS);
+  }
+  
+  //- seems alright; use it
+  this.options = options;
 }
 
 //========//========//========//========//========//========//========//========
 //- void traverseInTreeOrder(CNodeProxy node)
 
 traverseInTreeOrder() {
+  this.node = this.startingNode;
   let next = null;
   
   enter: while(this.node !== null) {
@@ -185,15 +198,16 @@ traverseInTreeOrder() {
       next = this.node.parentNode;
       
       if(next === null) {
-        assert(this.stack.isEmpty, errmsg.INVARIANT);
-        assert(this.node === this.startingNode, errmsg.INVARIANT);
-        assert((this.type === CT_NONE), errmsg.INVARIANT);
+        assert(this.stack.isEmpty, err.INVARIANT);
+        assert(this.node === this.startingNode, err.INVARIANT);
+        assert((this.type === CT_NONE), err.INVARIANT);
       }
       
       this.node = next;
     }//- exit
   }//- enter
   
+  //this.options = new COptions();
   this.startingNode = null;
   this.node = null;
   //this.type = CT_NONE;
@@ -246,7 +260,7 @@ onEnter() {
   }
   
   //# should have left by now
-  assert(false, errmsg.INVARIANT);
+  assert(false, err.INVARIANT);
 }
 
 //========//========//========//========//========//========//========//========
@@ -294,7 +308,7 @@ onExit() {
   }
   
   //# should have left by now
-  assert(false, errmsg.INVARIANT);
+  assert(false, err.INVARIANT);
 }
 
 //========//========//========//========//========//========//========//========
@@ -316,9 +330,9 @@ onContext_enter() {
   else if(context.type === CT_HC) {
     //- enter the child of a heading
     //- could be <strike>, <bold>, etc. ???
-    assert(!this.node.isSR, errmsg.INVALID_HTML);
-    assert(!this.node.isSC, errmsg.INVALID_HTML);
-    assert(!this.node.isHC, errmsg.INVALID_HTML);
+    assert(!this.node.isSR, err.INVALID_HTML);
+    assert(!this.node.isSC, err.INVALID_HTML);
+    assert(!this.node.isHC, err.INVALID_HTML);
   }
 }
 
@@ -385,10 +399,10 @@ onHidden_enter() {
 
 onHidden_exit() {
   let context = this.stack.pop();
-  assert((context.node === this.node), errmsg.INVARIANT);
-  assert((context.type !== CT_HIDE), errmsg.INVARIANT);
-  assert((context.outline === this.outline), errmsg.INVARIANT);
-  assert((context.section === this.section), errmsg.INVARIANT);
+  assert((context.node === this.node), err.INVARIANT);
+  assert((context.type !== CT_HIDE), err.INVARIANT);
+  assert((context.outline === this.outline), err.INVARIANT);
+  assert((context.section === this.section), err.INVARIANT);
   this.type = context.type;
 }
 
@@ -415,7 +429,7 @@ onSR_enter() {
     //- this.rootNode is a SR, it must be processed
     //- all other (inner) SRs are therefore optional;
     //  they must not contribute to ancestor SRs/SCs
-    assert((this.node === this.rootNode), errmsg.INVARIANT);
+    assert((this.node === this.rootNode), err.INVARIANT);
     this.ignoreNextSR = false;//- TODO - make optional
   }
   
@@ -464,10 +478,10 @@ onSR_enter() {
 onSR_exit() {
   if(this.ignoreNextSR === true) {
     let context = this.stack.pop();
-    assert((context.type === CT_HIDE), errmsg.INVARIANT);
-    assert((context.node === this.node), errmsg.INVARIANT);
-    assert((context.outline === this.outline), errmsg.INVARIANT);
-    assert((context.section === this.section), errmsg.INVARIANT);
+    assert((context.type === CT_HIDE), err.INVARIANT);
+    assert((context.node === this.node), err.INVARIANT);
+    assert((context.outline === this.outline), err.INVARIANT);
+    assert((context.section === this.section), err.INVARIANT);
     return;//- ignore this inner SR
   }
   
@@ -480,7 +494,7 @@ onSR_exit() {
   }
 
   if(this.stack.isEmpty) {
-    assert((this.node === this.startingNode), errmsg.INVARIANT);
+    assert((this.node === this.startingNode), err.INVARIANT);
     return;//- the walk is over
   }
 
@@ -488,10 +502,10 @@ onSR_exit() {
   assert(false, "TODO: still need to test this...");
   
   let context = this.stack.pop();
-  assert((context.type === CT_SR), errmsg.INVARIANT);
-  assert((context.node === this.node), errmsg.INVARIANT);
-  assert((context.outline !== this.outline), errmsg.INVARIANT);
-  assert((context.section !== this.section), errmsg.INVARIANT);
+  assert((context.type === CT_SR), err.INVARIANT);
+  assert((context.node === this.node), err.INVARIANT);
+  assert((context.outline !== this.outline), err.INVARIANT);
+  assert((context.section !== this.section), err.INVARIANT);
 
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
@@ -518,7 +532,7 @@ onSC_enter() {
   if(this.outline === null) {
     //- this.rootNode is a SC, not a SR
     //- all SRs are therefore optional
-    assert((this.node === this.rootNode), errmsg.INVARIANT);
+    assert((this.node === this.rootNode), err.INVARIANT);
     this.ignoreNextSR = false;//- TODO - make optional
   }
   
@@ -563,16 +577,16 @@ onSC_exit() {
   }
 
   if(this.stack.isEmpty) {
-    assert((this.node === this.startingNode), errmsg.INVARIANT);
+    assert((this.node === this.startingNode), err.INVARIANT);
     return;//- the walk is over
   }
 
   //- this SC is child of some other sectioning element
   let context = this.stack.pop();
-  assert((context.type === CT_SC), errmsg.INVARIANT);
-  assert((context.node === this.node), errmsg.INVARIANT);
-  assert((context.outline !== this.outline), errmsg.INVARIANT);
-  assert((context.section !== this.section), errmsg.INVARIANT);
+  assert((context.type === CT_SC), err.INVARIANT);
+  assert((context.node === this.node), err.INVARIANT);
+  assert((context.outline !== this.outline), err.INVARIANT);
+  assert((context.section !== this.section), err.INVARIANT);
 
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
@@ -634,16 +648,16 @@ onHC_enter() {
   //  reaching this point, the first section will always have a heading
   //- when taking the following code into account, and when reaching
   //  this point, all sections in the current SR/SC have existing headings
-  assert(!this.section.hasImpliedHeading, errmsg.INVARIANT);
+  assert(!this.section.hasImpliedHeading, err.INVARIANT);
   
   if(true) {//- just an optional performance shortcut
     let lastSection = this.outline.lastSection;
     
     //- lastSection always has a heading - see above
-    assert(lastSection.hasHeading, errmsg.INVARIANT);
+    assert(lastSection.hasHeading, err.INVARIANT);
     //- lastSection must always be on the same chain
     assert((lastSection === this.section)
-      || lastSection.isAncestorOf(this.section), errmsg.INVARIANT);
+      || lastSection.isAncestorOf(this.section), err.INVARIANT);
     
     //- if we already know, that we will have to add the new section
     //  to the current outline, then there is no need to go up the chain
@@ -666,7 +680,7 @@ onHC_enter() {
     //- parentSection.heading.rank will fail for non-headings;
     //  rank is only defined for existing headings; i.e. not for
     //  implied ones, and certainly not for null values.
-    assert(parentSection.hasHeading, errmsg.INVARIANT);
+    assert(parentSection.hasHeading, err.INVARIANT);
 
     //- if(node.rank < currentSection.heading.rank), then
     //  add the new section as a sub-section to currentSection,
@@ -700,7 +714,7 @@ onHC_enter() {
       //example: body; h2-A; h1-B /body
       //- enter h1-B; add a new section to the current outline
       //
-      assert((parentSection === this.outline.lastSection), errmsg.INVARIANT);
+      assert((parentSection === this.outline.lastSection), err.INVARIANT);
       let section = new CSection(this.node, this.node);
       this.outline.addSection(section);
       this.section = section;
@@ -723,10 +737,10 @@ onHC_enter() {
 
 onHC_exit() {
   let context = this.stack.pop();
-  assert((context.type === CT_HC), errmsg.INVARIANT);
-  assert((context.node === this.node), errmsg.INVARIANT);
-  assert((context.outline === this.outline), errmsg.INVARIANT);
-  assert((context.section === this.section), errmsg.INVARIANT);
+  assert((context.type === CT_HC), err.INVARIANT);
+  assert((context.node === this.node), err.INVARIANT);
+  assert((context.outline === this.outline), err.INVARIANT);
+  assert((context.section === this.section), err.INVARIANT);
 }
 
 //========//========//========//========//========//========//========//========
@@ -751,6 +765,7 @@ onOther_exit() {
 };//- module.exports
 
 //* must appear below module.exports (cyclic require statements)
+const COptions = require("./Options.js");
 const CStack = require("./Stack.js");
 const CContext = require("./Context.js");
 const CNodeProxy = require("./NodeProxy.js");

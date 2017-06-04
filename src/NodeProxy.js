@@ -3,7 +3,8 @@
 
 const assert = require("assert");
 const format = require("util").format;
-const errmsg = require("./errorMessages.js");
+
+const err = require("./errorMessages.js");
 const isObjectInstance = require("./isObjectInstance.js");
 
 /* must appear below module.exports (cyclic require statements)
@@ -44,16 +45,16 @@ module.exports = class CNodeProxy {
 //- new CNodeProxy(node, node) - a node inside the root's sub-tree
 
 constructor(node, parentNode) {
-  assert((arguments.length === 2), errmsg.DEVEL);
+  assert((arguments.length === 2), err.DEVEL);
   
   //- must be a non-null DomNode instance
-  assert(isObjectInstance(node), errmsg.DEVEL);
+  assert(isObjectInstance(node), err.DEVEL);
 
   if(parentNode === null) {
     //- represents the starting root node
   } else {
     //- represents a node inside the root's sub-tree
-    assert((parentNode instanceof CNodeProxy), errmsg.DEVEL);
+    assert((parentNode instanceof CNodeProxy), err.DEVEL);
   }
   
 //public:
@@ -328,7 +329,7 @@ get isHC() {
 
 get rank() {
   if(this._rank === undefined) {
-    assert(this.isHC, errmsg.DEVEL);
+    assert(this.isHC, err.DEVEL);
     let nodeName = this.nodeName;
     let rank = -1;
     
@@ -350,11 +351,11 @@ get parentSection() {
 }
 
 set parentSection(parentSection) {
-  assert((parentSection instanceof CSection), errmsg.DEVEL);
+  assert((parentSection instanceof CSection), err.DEVEL);
   
   if(this._parentSection !== null) {
     //- i.e. do not re-associate
-    assert((this._parentSection === parentSection), errmsg.DEVEL);
+    assert((this._parentSection === parentSection), err.DEVEL);
   }
   
   this._parentSection = parentSection;
@@ -368,11 +369,11 @@ get innerOutline() {
 }
 
 set innerOutline(innerOutline) {
-  assert((innerOutline instanceof COutline), errmsg.DEVEL);
+  assert((innerOutline instanceof COutline), err.DEVEL);
   
   if(this._innerOutline !== null) {
     //- i.e. do not re-associate
-    assert((this._innerOutline === innerOutline), errmsg.DEVEL);
+    assert((this._innerOutline === innerOutline), err.DEVEL);
   }
   
   this._innerOutline = innerOutline;
