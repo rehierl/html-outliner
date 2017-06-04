@@ -38,7 +38,7 @@ constructor() {
   //  i.e. this will also ignore all of their child nodes/elements
   //- false = ignore all hidden attributes; i.e. this will treat all
   //  elements and all of their child nodes/elements as being visible
-  this._ignoreHiddenElements = true;
+  this._ignoreHiddenAttributes = true;
   
   //- set to ignore all inner sectioning root (SR) elements
   //- false = also create outlines for these inner SRs
@@ -88,8 +88,8 @@ get verifyInvariants() {
 //========//========//========//========//========//========//========//========
 //- bool ignoreHiddenElements { get; }
 
-get ignoreHiddenElements() {
-  return this._ignoreHiddenElements;
+get ignoreHiddenAttributes() {
+  return this._ignoreHiddenAttributes;
 }
 
 //========//========//========//========//========//========//========//========

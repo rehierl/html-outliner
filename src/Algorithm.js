@@ -17,12 +17,12 @@ const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 //*/
 
-//- context type identifier values
-const CT_NONE   = -1;//- initial/default context identifier
-const CT_IGNORE = 0; //- when nodes have to be ignored; hidden, inner SRs
-const CT_SR     = 1; //- for top-level and inner sectioning root (SR) elements
-const CT_SC     = 2; //- for sectioning content nodes (SC) elements
-const CT_HC     = 3; //- for heading content (HC) elements
+//- identifiers for the state of this outliner automaton
+const STATE_START  = 0;//- initial identifier
+const STATE_IGNORE = 1;//- when nodes have to be ignored; hidden or inner SRs
+const STATE_SR     = 2;//- for top-level and inner sectioning root (SR) elements
+const STATE_SC     = 3;//- for sectioning content (SC) elements
+const STATE_HC     = 4;//- for heading content (HC) elements
 
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
@@ -73,10 +73,10 @@ constructor() {
     this._node = null;
 
     //- int type
-    //- the current context type indicator
+    //- the current context type identifier
     //- in general, its value indicates in which kind
     //  of subtree we are currently in
-    this._type = CT_NONE;
+    this._state = STATE_START;
 
     //- COutline outline
     //- a reference to the current outline
@@ -98,7 +98,8 @@ constructor() {
 
 createOutline(root, optionsArg) {
   if(arguments.length === 1) {
-    //- uncomment to use the previous options instead
+    //- comment to re-use the previous options
+    //- uncomment to use default options
     //this._options = new COptions();
     this.validateDomNode(root);
   } else if(arguments.length === 2) {
@@ -109,15 +110,15 @@ createOutline(root, optionsArg) {
     assert(false, err.DEVEL);
   }
 
+  //- TODO - error handling try-catch-finally
   this.traverseInTreeOrder();
   
   if(this._options.verifyInvariants) {
     //- verify that we have a clean exit
-    //assert(this._options.isDefault, err.INVARIANT);
     assert((this._startingNode === null), err.INVARIANT);
     assert((this._node === null), err.INVARIANT);
-    assert((this._type === CT_NONE), err.INVARIANT);
-    assert((this._outline !== null), err.INVARIANT);
+    assert((this._state === STATE_START), err.INVARIANT);
+    assert((this._outline !== null), err.INVARIANT);//- result
     assert((this._section === null), err.INVARIANT);
     assert(this._stack.isEmpty, err.INVARIANT);
   }
@@ -181,7 +182,7 @@ traverseInTreeOrder() {
   enter: while(this._node !== null) {
     this.onEnter();
     
-    if(this._type === CT_IGNORE) {
+    if(this._state === STATE_IGNORE) {
       next = null;//- ignore all child nodes, if any
     } else {
       next = this._node.firstChild;
@@ -203,12 +204,14 @@ traverseInTreeOrder() {
       }
       
       //- null, if node is the startingNode
-      //- in that case, the walk is over
       next = this._node.parentNode;
       
       if((next === null) && this._options.verifyInvariants) {
+        //- verify that we have a clean exit
         assert((this._node === this._startingNode), err.INVARIANT);
-        assert((this._type === CT_NONE), err.INVARIANT);
+        assert((this._state === STATE_START), err.INVARIANT);
+        //assert((this._outline !== null), err.INVARIANT);//- result
+        assert((this._section === null), err.INVARIANT);
         assert(this._stack.isEmpty, err.INVARIANT);
       }
       
@@ -216,12 +219,11 @@ traverseInTreeOrder() {
     }//- exit
   }//- enter
   
-  //this._options = new COptions();
   this._startingNode = null;
-  this._node = null;
-  //this._type = CT_NONE;
-  //this._outline = null;
-  this._section = null;
+  //this._node = null;
+  //this._state = STATE_START;
+  //this._outline = null;//- result
+  //this._section = null;
 }
 
 //========//========//========//========//========//========//========//========
@@ -229,7 +231,7 @@ traverseInTreeOrder() {
 
 onEnter() {
   //- check the current context first
-  if(this._type !== CT_NONE) {
+  if(this._state !== STATE_START) {
     let leave = this.onContext_enter();
     if(leave === true) return;//- ignore
   }
@@ -240,9 +242,9 @@ onEnter() {
     this.onNonElement_enter(); return;
   }
   
-  //- hidden elements
+  //- hidden attributes/elements
   if(this._node.isHidden
-  && (this._options.ignoreHiddenElements !== true)) {
+  && (this._options.ignoreHiddenAttributes !== true)) {
     this.onHiddenElement_enter(); return;
   }
   
@@ -278,7 +280,7 @@ onEnter() {
 
 onExit() {
   //- check the current context first
-  if(this._type !== CT_NONE) {
+  if(this._state !== STATE_START) {
     let leave = this.onContext_exit();
     if(leave === true) return;//- ignore
   }
@@ -289,9 +291,9 @@ onExit() {
     this.onNonElement_exit(); return;
   }
   
-  //- hidden elements
+  //- hidden attributes/elements
   if(this._node.isHidden
-  && (this._options.ignoreHiddenElements !== true)) {
+  && (this._options.ignoreHiddenAttributes !== true)) {
     this.onHiddenElement_exit(); return;
   }
   
@@ -329,16 +331,22 @@ onExit() {
 //- void onContext_enter(CNodeProxy node)
 
 onContext_enter() {
-  if(this._type === CT_IGNORE) {
+  if(this._options.verifyInvariants) {
+    assert((this._stack.isEmpty !== true), err.INVARIANT);
+  }
+  
+  if(this._state === STATE_IGNORE) {
+    //- should no longer happen - see traverseInTreeOrder()
     //- enter the child of a to-be-ignored node;
     //  e.g. hidden elements, inner SRs, etc.
     return true;//- leave/ignore
   }
 
-  if(this._type === CT_HC) {
+  if(this._state === STATE_HC) {
     //- enter the child of a heading
     
     if(this._options.verifyValidHtml) {
+      //- TODO - what exactly will happen if these assertions are ignored?
       assert((this._node.isSR !== true), err.INVALID_HTML);
       assert((this._node.isSC !== true), err.INVALID_HTML);
       assert((this._node.isHC !== true), err.INVALID_HTML);
@@ -355,24 +363,27 @@ onContext_enter() {
 //- void onContext_exit(CNodeProxy node)
 
 onContext_exit() {
-  if(this._stack.tos.isEmpty !== true) {
-    let context = this._stack.tos;
-    
-    if(context.node === this._node) {
-      //- whoever pushes() onto the stack
-      //  is responsible to pop()
-      return false;//- continue
-    }
+  if(this._options.verifyInvariants) {
+    assert((this._stack.isEmpty !== true), err.INVARIANT);
   }
   
-  if(this._type === CT_IGNORE) {
+  let context = this._stack.tos;
+
+  if(context.node === this._node) {
+    //- exiting the node responsible for the current state
+    //- whoever pushes() onto the stack is responsible to pop()
+    return false;//- continue
+  }
+  
+  if(this._state === STATE_IGNORE) {
+    //- should no longer happen - see traverseInTreeOrder()
     //- exit the child of a to-be-ignored node;
     //  e.g. hidden elements, inner SRs, etc.
     //- not the to-be-ignored node itself
     return true;//- leave/ignore
   }
 
-  if(this._type === CT_HC) {
+  if(this._state === STATE_HC) {
     //- exit the child of a heading
     //- not the heading itself
     return false;//- continue
@@ -409,10 +420,10 @@ onNonElement_exit() {
 
 onHiddenElement_enter() {
   this._stack.push(new CContext(
-    this._node, this._type, this._outline, this._section
+    this._node, this._state, this._outline, this._section
   ));
   
-  this._type = CT_IGNORE;
+  this._state = STATE_IGNORE;
 }
 
 //========//========//========//========//========
@@ -423,12 +434,12 @@ onHiddenElement_exit() {
   
   if(this._options.verifyInvariants) {
     assert((context.node === this._node), err.INVARIANT);
-    assert((context.type !== CT_IGNORE), err.INVARIANT);
+    assert((context.state !== STATE_IGNORE), err.INVARIANT);
     assert((context.outline === this._outline), err.INVARIANT);
     assert((context.section === this._section), err.INVARIANT);
   }
   
-  this._type = context.type;
+  this._state = context.state;
 }
 
 //========//========//========//========//========//========//========//========
@@ -443,31 +454,41 @@ onSRE_enter() {
     //- this SR is an inner SR, ignore it
     
     this._stack.push(new CContext(
-      this._node, this._type, this._outline, this._section
+      this._node, this._state, this._outline, this._section
     ));
     
-    this._type = CT_IGNORE;
+    this._state = STATE_IGNORE;
     return;//- we are done here
   }
   
-  if(this._outline === null) {
-    //- this SR is the rootNode, it must be processed
+  if(this._state === STATE_START) {
+    //- this SR is the root sectioning element, it must be processed
     
     if(this._options.verifyInvariants) {
       assert((this._node === this.rootNode), err.INVARIANT);
+      //assert((this._state === STATE_START), err.INVARIANT);
+      assert((this._outline === null), err.INVARIANT);
+      assert((this._section === null), err.INVARIANT);
     }
     
-    //- all other (inner) SRs are optional as they
-    //  must not contribute to ancestor SRs/SCs
+    //- all other SRs are inner SRs and therefore optional
+    //- inner SRs do not contribute to the outlines of their ancestors
     this._ignoreNextSR = this._options.ignoreInnerSR;
   }
   
-  else {//- if(this._outline !== null) {
-    assert(false, "TODO: still need to test this...");
-    //- this SR is child of some other SR/SC
+  else {//- if(this._state !== STATE_START) {
+    //- this SR is an inner SR of some other SR/SC
+    
+    if(this._options.verifyInvariants) {
+      assert((this._node !== this.rootNode), err.INVARIANT);
+      //assert((this._state !== STATE_START), err.INVARIANT);
+      assert((this._outline !== null), err.INVARIANT);
+      assert((this._section !== null), err.INVARIANT);
+    }
 
     if(this._section.hasNoHeading) {
-      //- this section (preceeding this SR) does not yet have a heading
+      //- this section (in front of this SR) does not yet have a heading;
+      //  it does not end with the beginning of this inner SR
       //
       //example: hX, dialog, ..., /dialog, p
       //- 'p' must be associated with 'hX'
@@ -477,16 +498,19 @@ onSRE_enter() {
       //- 'dialog' cannot determine if 'body' has a heading or not
       //- 'body' might still have one, we just didn't reach it yet
       //
+      //- must not be executed here
       //this._section.createAndSetImpliedHeading();
     }
-
-    //- push/save the current context
-    this._stack.push(new CContext(
-      this._node, this._type, this._outline, this._section));
   }
 
-  //- indicate that we have entered a SR
-  this._type = CT_SR;
+  //- backup the surrounding context,
+  //  even if it is the initial/starting context
+  this._stack.push(new CContext(
+    this._node, this._state, this._outline, this._section
+  ));
+
+  //- indicate that we are processing a SR
+  this._state = STATE_SR;
   
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
@@ -505,45 +529,59 @@ onSRE_enter() {
 //- void onSRE_exit(CNodeProxy node)
 
 onSRE_exit() {
-  if(this._ignoreNextSR === true) {
-    let context = this._stack.pop();
-    
-    if(this._options.verifyInvariants) {
-      assert((context.type === CT_IGNORE), err.INVARIANT);
-      assert((context.node === this._node), err.INVARIANT);
-      assert((context.outline === this._outline), err.INVARIANT);
-      assert((context.section === this._section), err.INVARIANT);
-    }
-    
-    return;//- ignore this inner SR
-  }
-  
   if(this._section.hasNoHeading) {
-    assert(false, "TODO: still need to test this...");
-
     //- the current section (inside this SR) does not have
     //  a single heading element; it ends with this SR
     this._section.createAndSetImpliedHeading();
   }
 
-  if(this._stack.isEmpty) {
+  //- get/retrieve the surrounding context
+  let context = this._stack.pop();
+  
+  //- this SR is a top-level SR
+  
+  if(context.state === STATE_START) {
     if(this._options.verifyInvariants) {
+      assert((context.node === this._node), err.INVARIANT);
+      //assert((context.state === STATE_START), err.INVARIANT);
+      assert((context.outline === null), err.INVARIANT);
+      assert((context.section === null), err.INVARIANT);
       assert((this._node === this._startingNode), err.INVARIANT);
+      assert((this._state === STATE_SR), err.INVARIANT);
+      assert(this._stack.isEmpty, err.INVARIANT);
     }
+    //- restore the surrounding context
+    this._state = STATE_START;
+    //- leave this._outline as result
+    this._section = null;
     return;//- the walk is over
   }
 
-  //- this SR is child of some other sectioning element
-  assert(false, "TODO: still need to test this...");
-  let context = this._stack.pop();
+  //- this SR is an ignored inner SR
+  
+  if(this._state === STATE_IGNORE) {
+    if(this._options.verifyInvariants) {
+      assert((context.node === this._node), err.INVARIANT);
+      assert((context.state !== STATE_IGNORE), err.INVARIANT);
+      assert((context.outline === this._outline), err.INVARIANT);
+      assert((context.section === this._section), err.INVARIANT);
+    }
+    //- restore the surrounding context
+    this._state = context.state;
+    return;//- ignore this inner SR
+  }
+  
+  //- this SR is a processed inner SR
   
   if(this._options.verifyInvariants) {
-    assert((context.type === CT_SR), err.INVARIANT);
     assert((context.node === this._node), err.INVARIANT);
+    //- context.state can't be STATE_START, STATE_IGNORE, STATE_HC
+    //- context.state could be STATE_SR, STATE_SC
     assert((context.outline !== this._outline), err.INVARIANT);
     assert((context.section !== this._section), err.INVARIANT);
   }
 
+  //- restore the surrounding context
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
   //- context.section (outer) must not be altered;
@@ -551,7 +589,7 @@ onSRE_exit() {
   this._outline = context.outline;
   this._section = context.section;
 
-  //- implement a hierarchy of outlines?
+  //- TODO - implement a hierarchy of outlines?
   //- make node.innerOutline an inner outline of this._outline?
   //context.outline.appendOutline(node.innerOutline)
 }
@@ -564,33 +602,51 @@ onSRE_exit() {
 //- void onSCE_enter(CNodeProxy node)
 
 onSCE_enter() {
-  assert(false, "TODO: still need to test this...");
-  
-  if(this._outline === null) {
-    //- this.rootNode is a SC, not a SR
+  if(this._state === STATE_START) {
+    //- this SC is the root sectioning element
     
     if(this._options.verifyInvariants) {
       assert((this._node === this.rootNode), err.INVARIANT);
+      assert((this._outline === null), err.INVARIANT);
+      assert((this._section === null), err.INVARIANT);
     }
     
-    //- all SRs are optional
+    //- all SRs are inner SRs and therefore optional
+    //- inner SRs do not contribute to the outlines of their ancestors
     this._ignoreNextSR = this._options.ignoreInnerSR;
   }
   
-  else {//- if(this._outline !== null) {
+  else {//- if(this._state !== STATE_START) {
     //- this SC is child of some other SR/SC
-
-    if(this._section.hasNoHeading) {
-      //- this section (in front of this SC) does not yet have a heading
-      //- that section ends with the beginning of this SC
-      this._section.createAndSetImpliedHeading();
+    
+    if(this._options.verifyInvariants) {
+      assert((this._node !== this.rootNode), err.INVARIANT);
+      assert((this._outline !== null), err.INVARIANT);
+      assert((this._section !== null), err.INVARIANT);
     }
 
-    //- push/save the current context
-    this._stack.push(new CContext(
-      CT_SC, this._node, this._outline, this._section
-    ));
+    if(this._section.hasNoHeading) {
+      //- this section (in front of this SC) does not yet have a heading;
+      //  it ends with the beginning of this SC
+      //
+      //example: hX, section, ..., /section, p, hY
+      //- TODO - to which section does 'p' belong?
+      //- if hY's section, but then heading-after-paragraph...
+      //- so probably the parent's section
+      //
+      //- must be executed here
+      this._section.createAndSetImpliedHeading();
+    }
   }
+
+  //- backup the surrounding context,
+  //  even if it is the initial/starting context
+  this._stack.push(new CContext(
+    this._node, this._state, this._outline, this._section
+  ));
+  
+  //- indicate that we are processing a SC
+  this._state = STATE_SC;
 
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
@@ -609,31 +665,45 @@ onSCE_enter() {
 //- void onSCE_exit(CNodeProxy node)
 
 onSCE_exit() {
-  assert(false, "TODO: still need to test this...");
-
   if(this._section.hasNoHeading) {
     //- the current section (inside this SC) does not have
     //  a single heading element; it ends with this SC
     this._section.createAndSetImpliedHeading();
   }
 
-  if(this._stack.isEmpty) {
+  //- get/retrieve the surrounding context
+  let context = this._stack.pop();
+  
+  //- this SC is a top-level SC
+  
+  if(context.state === STATE_START) {
     if(this._options.verifyInvariants) {
+      assert((context.node === this._node), err.INVARIANT);
+      //assert((context.state === STATE_START), err.INVARIANT);
+      assert((context.outline === null), err.INVARIANT);
+      assert((context.section === null), err.INVARIANT);
       assert((this._node === this._startingNode), err.INVARIANT);
+      assert((this._state === STATE_SC), err.INVARIANT);
+      assert(this._stack.isEmpty, err.INVARIANT);
     }
+    //- restore the surrounding context
+    this._state = STATE_START;
+    //this._outline = null;//- leave as result
+    this._section = null;
     return;//- the walk is over
   }
 
-  //- this SC is child of some other sectioning element
-  let context = this._stack.pop();
+  //- this SC is an inner SC
   
   if(this._options.verifyInvariants) {
-    assert((context.type === CT_SC), err.INVARIANT);
     assert((context.node === this._node), err.INVARIANT);
+    //- context.state can't be STATE_START, STATE_IGNORE, STATE_HC
+    //- context.state could be STATE_SR, STATE_SC
     assert((context.outline !== this._outline), err.INVARIANT);
     assert((context.section !== this._section), err.INVARIANT);
   }
 
+  //- restore the surrounding context
   //- node.innerOutline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
   //- context.section (outer) must still be altered;
@@ -665,7 +735,7 @@ onSCE_exit() {
     this._section.addSubSection(section);
   }
 
-  //- implement a hierarchy of outlines?
+  //- TODO - implement a hierarchy of outlines?
   //- make node.innerOutline an inner outline of this._outline?
   //context.outline.appendOutline(node.innerOutline)
 }
@@ -685,7 +755,8 @@ onHCE_enter() {
   if(this._section.hasNoHeading) {
     this._section.heading = this._node;
     this._stack.push(new CContext(
-      CT_HC, this._node, this._outline, this._section));
+      this._node, this._state, this._outline, this._section));
+    this._state = STATE_HC;
     return;//- we are done here
   }
 
@@ -716,7 +787,8 @@ onHCE_enter() {
       this._outline.addSection(section);
       this._section = section;
       this._stack.push(new CContext(
-        CT_HC, this._node, this._outline, this._section));
+        this._node, this._state, this._outline, this._section));
+      this._state = STATE_HC;
       return;//- we are done here
     }
   }
@@ -753,7 +825,8 @@ onHCE_enter() {
       parentSection.addSubSection(section);
       this._section = section;
       this._stack.push(new CContext(
-        CT_HC, this._node, this._outline, this._section));
+        this._node, this._state, this._outline, this._section));
+      this._state = STATE_HC;
       return;//- we are done here
     }
 
@@ -776,7 +849,8 @@ onHCE_enter() {
       this._outline.addSection(section);
       this._section = section;
       this._stack.push(new CContext(
-        CT_HC, this._node, this._outline, this._section));
+        this._node, this._state, this._outline, this._section));
+      this._state = STATE_HC;
       return;//- we are done here
     }
     
@@ -793,13 +867,14 @@ onHCE_enter() {
 //- void onHCE_exit(CNodeProxy node)
 
 onHCE_exit() {
+  //- get/retrieve the surrounding context
   let context = this._stack.pop();
   
   if(this._options.verifyInvariants) {
-    assert((context.type === CT_HC), err.INVARIANT);
-    assert((context.node === this._node), err.INVARIANT);
-    assert((context.outline === this._outline), err.INVARIANT);
-    assert((context.section === this._section), err.INVARIANT);
+    assert((context._node === this._node), err.INVARIANT);
+    assert((context._state === STATE_HC), err.INVARIANT);
+    assert((context._outline === this._outline), err.INVARIANT);
+    assert((context._section === this._section), err.INVARIANT);
   }
 }
 

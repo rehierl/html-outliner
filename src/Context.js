@@ -17,7 +17,7 @@ module.exports = class CContext {
 //- new CContext(CNodeProxy node, Anything type,
 //  COutline outline, CSection section)
 
-constructor(node, type, outline, section) {
+constructor(node, state, outline, section) {
   assert((arguments.length === 4), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
   assert((outline === null) || (outline instanceof COutline), err.DEVEL);
@@ -26,7 +26,7 @@ constructor(node, type, outline, section) {
 //public:
 
   //- CNodeProxy node { get; }
-  //- Anything type { get; }
+  //- Anything state { get; }
   //- COutline outline { get; }
   //- CSection section { get; }
 
@@ -37,11 +37,11 @@ constructor(node, type, outline, section) {
   //  of this context object
   this._node = node;
 
-  //- Anything _type
+  //- Anything _state
   //- the current type identifier
   //  associated with this context
   //- mainly used to ignore/hide nodes
-  this._type = type;
+  this._state = state;
   
   //- COutline _outline
   //- the current outline at the time
@@ -62,10 +62,10 @@ get node() {
 }
 
 //========//========//========//========//========//========//========//========
-//- Anything type { get; }
+//- Anything state { get; }
 
-get type() {
-  return this._type;
+get state() {
+  return this._state;
 }
 
 //========//========//========//========//========//========//========//========
