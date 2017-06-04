@@ -46,8 +46,9 @@ push(context) {
 
 pop() {
   assert((arguments.length === 0), err.DEVEL);
-  let len = this._buffer.length;
-  assert((len > 0), err.INVARIANT);
+  //- let it crash if that happens
+  //let len = this._buffer.length;
+  //assert((len > 0), err.INVARIANT);
   return this._buffer.pop();
 }
 
@@ -56,7 +57,8 @@ pop() {
 
 get tos() {
   let len = this._buffer.length;
-  assert((len > 0), err.INVARIANT);
+  //- let it crash if that happens
+  //assert((len > 0), err.INVARIANT);
   return this._buffer[len-1];
 }
 

@@ -8,16 +8,18 @@ const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
+const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
 //*/
 
 module.exports = class COutline {
 //========//========//========//========//========//========//========//========
+//- new COutline(COptions options, CNodeProxy owner)
 
-//- new COutline(CNodeProxy owner)
-constructor(node) {
-  assert((arguments.length === 1), err.DEVEL);
+constructor(options, node) {
+  assert((arguments.length === 2), err.DEVEL);
+  assert((options instanceof COptions), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
   assert((node.isSR || node.isSC), err.INVARIANT);
   
@@ -26,14 +28,20 @@ constructor(node) {
 
 //public:
 
+  //- COptions options { get; }
+
   //- CNodeProxy outlineOwner { get; }
-  //- bool isImpliedOutline { get; }
+  //- bool isImplicitOutline { get; }
 
   //- void addSection(CSection section)
   //- CSection lastSection { get; }
   //- CSection[] sections { get; }
 
 //private:
+
+  //- COptions options
+  //- the options to use during the current run
+  this._options = options;
   
   //- CNodeProxy _outlineOwner
   //- the outline's starting CNodeProxy object
@@ -47,6 +55,13 @@ constructor(node) {
 }
 
 //========//========//========//========//========//========//========//========
+//- COptions options { get; }
+
+get options() {
+  return this._options;
+}
+
+//========//========//========//========//========//========//========//========
 //- CNodeProxy outlineOwner { get; }
 
 get outlineOwner() {
@@ -54,9 +69,11 @@ get outlineOwner() {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool isImpliedOutline { get; }
+//- bool isImplicitOutline { get; }
 
-get isImpliedOutline() {
+//- TODO - meant to help create an outline hierarchy
+//- distinguish from outlines of inner SRs
+get isImplicitOutline() {
   return this._outlineOwner.isSC;
 }
 
@@ -91,6 +108,7 @@ get sections() {
 };//- module.exports
 
 //* must appear below module.exports (cyclic require statements)
+const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
 //*/

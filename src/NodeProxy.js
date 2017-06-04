@@ -9,6 +9,7 @@ const isObjectInstance = require("./isObjectInstance.js");
 
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
+const COptions = require("./Options.js");
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 //*/
@@ -19,35 +20,21 @@ const COutline = require("./Outline.js");
 //- used to test if a node represents an element
 const ELEMENT_NODE = 1;
 
-//- a regular expression used to test if an element is a
-//  sectioning root (SR) element
-//- TODO - allow other/additional tags
-const rxSR = /^(blockquote|body|details|dialog|fieldset|figure|td)$/i;
-
-//- a regular expression used to test if an element is a
-//  sectioning content (SC) element
-//- TODO - allow other/additional tags
-const rxSC = /^(article|aside|nav|section)$/i;
-
-//- a regular expression used to test if an element represents a
-//  heading content element; e.g. h1, h2, h3, h4, h5, h6
-//- TODO - allow other/additional tags
-const rxHC = /^(h[1-6])$/i;
-
-//- a regular expression used to test if the tag of a heading
-//  element holds a rank value; highest rank if that isn't the case
-const rxHR = /^h[1-6]$/i;
+//- a regular expression used to test if a heading element
+//  is a standard heading element; i.e. can the heading's rank value be
+//  derived from the heading's name/tag?
+//- dom will return a node's name/tag in uppercase letters
+const rxHR = /^(h[1-6])$/i;
 
 module.exports = class CNodeProxy {
 //========//========//========//========//========//========//========//========
-//- new CNodeProxy(DomNode node, CNodeProxy parentNode)
-//- new CNodeProxy(node, null) - the root node to traverse
-//- new CNodeProxy(node, node) - a node inside the root's sub-tree
+//- new CNodeProxy(COptions options, DomNode node, CNodeProxy parentNode)
+//- new CNodeProxy(options, node, null) - the root node to traverse
+//- new CNodeProxy(options, node, node) - a node inside the root's sub-tree
 
-constructor(node, parentNode) {
-  assert((arguments.length === 2), err.DEVEL);
-  
-  //- must be a non-null DomNode instance
+constructor(options, node, parentNode) {
+  assert((arguments.length === 3), err.DEVEL);
+  assert((options instanceof COptions), err.DEVEL);
   assert(isObjectInstance(node), err.DEVEL);
 
   if(parentNode === null) {
@@ -59,6 +46,7 @@ constructor(node, parentNode) {
   
 //public:
 
+  //- COptions options { get; }
   //- DomNode domNode { get; }
 
   //- bool isDomNode { get; }
@@ -79,6 +67,10 @@ constructor(node, parentNode) {
   //- COutline innerOutline { get; set; }
 
 //private:
+
+  //- COptions options
+  //- the options to use during the current run
+  this._options = options;
   
   //- DomNode _node
   //- the DOM node represented by this CNodeProxy object
@@ -146,14 +138,10 @@ constructor(node, parentNode) {
 }
 
 //========//========//========//========//========//========//========//========
-//- String toString()
+//- COptions options { get; }
 
-toString() {
-  if(this.isDomNode) {
-    return this._node.nodeName;
-  } else {
-    return Object.toString(this._node);
-  }
+get options() {
+  return this._options;
 }
 
 //========//========//========//========//========//========//========//========
@@ -210,7 +198,9 @@ get firstChild() {
     if(!isObjectInstance(child)) {
       this._firstChild = null;
     } else {
-      this._firstChild = new CNodeProxy(child, this);
+      this._firstChild = new CNodeProxy(
+        this._options, child, this
+      );
     }
   }
   return this._firstChild;
@@ -226,7 +216,9 @@ get nextSibling() {
     if(!isObjectInstance(sibling)) {
       this._nextSibling = null;
     } else {
-      this._nextSibling = new CNodeProxy(sibling, this._parentNode);
+      this._nextSibling = new CNodeProxy(
+        this._options, sibling, this._parentNode
+      );
     }
   }
   return this._nextSibling;
@@ -296,7 +288,7 @@ get tagName() {
 get isSR() {
   if(this._isSR === undefined) {
     let nodeName = this.nodeName;
-    this._isSR = rxSR.test(nodeName);
+    this._isSR = this._options.rxSR.test(nodeName);
   }
   return this._isSR;
 }
@@ -307,7 +299,7 @@ get isSR() {
 get isSC() {
   if(this._isSC === undefined) {
     let nodeName = this.nodeName;
-    this._isSC = rxSC.test(nodeName);
+    this._isSC = this._options.rxSC.test(nodeName);
   }
   return this._isSC;
 }
@@ -318,7 +310,7 @@ get isSC() {
 get isHC() {
   if(this._isHC === undefined) {
     let nodeName = this.nodeName;
-    this._isHC = rxHC.test(nodeName);
+    this._isHC = this._options.rxHC.test(nodeName);
   }
   return this._isHC;
 }
@@ -330,6 +322,7 @@ get isHC() {
 get rank() {
   if(this._rank === undefined) {
     assert(this.isHC, err.DEVEL);
+    
     let nodeName = this.nodeName;
     let rank = -1;
     
@@ -383,6 +376,7 @@ set innerOutline(innerOutline) {
 };//- module.exports
 
 //* must appear below module.exports (cyclic require statements)
+const COptions = require("./Options.js");
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 //*/

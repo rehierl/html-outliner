@@ -8,6 +8,7 @@ const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
+const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
 const COutline = require("./Outline.js");
 //*/
@@ -20,13 +21,13 @@ const IMPLIED_HEADING = 0;
 
 module.exports = class CSection {
 //========//========//========//========//========//========//========//========
-//- new CSection(CNodeProxy startingNode, CNodeProxy heading)
-//- new CSection(node, null) - start a new section with an unknown heading
-//- new CSection(node, heading) - start a new section with a known heading
+//- new CSection(CNodeProxy startingNode, CNodeProxy heading, COptions options)
+//- new CSection(node, null, options) - start a new section with an unknown heading
+//- new CSection(node, heading, options) - start a new section with a known heading
 
-constructor(node, heading) {
-  assert((arguments.length === 2), err.DEVEL);
-
+constructor(options, node, heading) {
+  assert((arguments.length === 3), err.DEVEL);
+  assert((options instanceof COptions), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
   assert((node.isSR || node.isSC || node.isHC), err.INVARIANT);
   
@@ -40,8 +41,12 @@ constructor(node, heading) {
   
 //public:
 
+  //- COptions options { get; }
+
   //- CNodeProxy startingNode { get; }
-  //- bool isImpliedSection { get; }
+  //- bool isExplicitSection { get; }
+  //- bool isImplicitSection { get; }
+
   //- COutline parentOutline { get; set; }
   
   //- bool hasNoHeading { get; }
@@ -58,6 +63,10 @@ constructor(node, heading) {
   //- CSection[] subsections { get; }
 
 //private:
+
+  //- COptions options
+  //- the options to use during the current run
+  this._options = options;
   
   //- CNodeProxy _startingNode
   //- the node that triggered the creation of this section
@@ -85,6 +94,13 @@ constructor(node, heading) {
 }
 
 //========//========//========//========//========//========//========//========
+//- COptions options { get; }
+
+get options() {
+  return this._options;
+}
+
+//========//========//========//========//========//========//========//========
 //- CNodeProxy startingNode { get; }
 
 get startingNode() {
@@ -92,9 +108,16 @@ get startingNode() {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool isImpliedSection { get; }
+//- bool isExplicitSection { get; }
 
-get isImpliedSection() {
+get isExplicitSection() {
+  return !this._startingNode.isHC;
+}
+
+//========//========//========//========//========//========//========//========
+//- bool isImplicitSection { get; }
+
+get isImplicitSection() {
   return this._startingNode.isHC;
 }
 
@@ -246,6 +269,7 @@ get subsections() {
 };//- module.exports
 
 //* must appear below module.exports (cyclic require statements)
+const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
 const COutline = require("./Outline.js");
 //*/

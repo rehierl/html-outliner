@@ -20,7 +20,6 @@ module.exports = class CContext {
 constructor(node, type, outline, section) {
   assert((arguments.length === 4), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
-  //- type can be anything reasonable
   assert((outline === null) || (outline instanceof COutline), err.DEVEL);
   assert((section === null) || (section instanceof CSection), err.DEVEL);
   
