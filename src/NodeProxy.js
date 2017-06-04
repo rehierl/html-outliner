@@ -195,7 +195,7 @@ get firstChild() {
   if(this._firstChild === undefined) {
     let child = this._node.firstChild;
     
-    if(!isObjectInstance(child)) {
+    if(isObjectInstance(child) !== true) {
       this._firstChild = null;
     } else {
       this._firstChild = new CNodeProxy(
@@ -213,7 +213,7 @@ get nextSibling() {
   if(this._nextSibling === undefined) {
     let sibling = this._node.nextSibling;
     
-    if(!isObjectInstance(sibling)) {
+    if(isObjectInstance(sibling) !== true) {
       this._nextSibling = null;
     } else {
       this._nextSibling = new CNodeProxy(
@@ -265,7 +265,7 @@ get isElement() {
 
 get isHidden() {
   if(this._isHidden === undefined) {
-    if(!this.isElement) {
+    if(this.isElement !== true) {
       this._isHidden = false;
     } else {
       this._isHidden = this._node.hasAttribute("hidden");

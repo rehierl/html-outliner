@@ -82,7 +82,7 @@ load(root) {
     let absPath = files[ix];
     let relPath = absPath.substring(absRootLen+1);
     
-    if(!relPath.endsWith(".test")) {
+    if(relPath.endsWith(".test") !== true) {
       //- ignore non-script files
       continue;
     }

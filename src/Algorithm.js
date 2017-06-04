@@ -18,11 +18,11 @@ const COutline = require("./Outline.js");
 //*/
 
 //- context type identifier values
-const CT_NONE = -1;//- initial/default context identifier
-const CT_HIDE = 0; //- hidden nodes, inner sectioning root nodes (SR)
-const CT_SR = 1;   //- top-level SR, inner SRs
-const CT_SC = 2;   //- sectioning content nodes (SC)
-const CT_HC = 3;   //- heading content (HC)
+const CT_NONE   = -1;//- initial/default context identifier
+const CT_IGNORE = 0; //- when nodes have to be ignored; hidden, inner SRs
+const CT_SR     = 1; //- for top-level and inner sectioning root (SR) elements
+const CT_SC     = 2; //- for sectioning content nodes (SC) elements
+const CT_HC     = 3; //- for heading content (HC) elements
 
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
@@ -33,21 +33,21 @@ constructor() {
   
 //public:
 
-  //- COutline createOutline(DomNode node) throws AssertionError
-  //- COutline createOutline(DomNode node, Object options) throws AssertionError
+  //- COutline createOutline(DomNode root) throws AssertionError
+  //- COutline createOutline(DomNode root, Object optionsArg) throws AssertionError
   
 //private:
 
-  //- void validateDomNode(DomNode domNode)
   //- void validateOptionsArg(Object optionsArg)
   //- void validateOptionsArg(String optionsArg)
+  //- void validateDomNode(DomNode root)
 
   //- void traverseInTreeOrder()
 
   //- void onEnter()
-  //- void onExit()
-
   //- void onXXX_enter()
+  
+  //- void onExit()
   //- void onXXX_exit()
 
 //private:
@@ -62,7 +62,9 @@ constructor() {
   
   //- inner SRs are optional and can be ignored
   //- this flag is used to determine what to do when
-  //  entering the next inner SR
+  //  entering the next SR
+  //- the first SR could be the root element itself;
+  //  i.e. must be initialized to 'false'
   this._ignoreNextSR = false;
   
   {//- current context; see CContext class
@@ -91,18 +93,18 @@ constructor() {
 }
 
 //========//========//========//========//========//========//========//========
-//- COutline createOutline(DomNode node)
-//- COutline createOutline(DomNode node, Object options)
+//- COutline createOutline(DomNode root)
+//- COutline createOutline(DomNode root, Object optionsArg)
 
-createOutline(node, options) {
+createOutline(root, optionsArg) {
   if(arguments.length === 1) {
     //- uncomment to use the previous options instead
     //this._options = new COptions();
-    this.validateDomNode(node);
+    this.validateDomNode(root);
   } else if(arguments.length === 2) {
-    //- check the options first!
-    this.validateOptionsArg(options);
-    this.validateDomNode(node);
+    //- check optionsArg first
+    this.validateOptionsArg(optionsArg);
+    this.validateDomNode(root);
   } else {
     assert(false, err.DEVEL);
   }
@@ -137,32 +139,35 @@ validateOptionsArg(optionsArg) {
     //- a JSON string that can be parsed into an options argument
     options.combine(optionsArg);
   } catch(error) {
-    //- TODO - implement better error handling
+    //- TODO - implement a better error handling
     assert(false, err.INVALID_OTPIONS);
   }
   
-  //- seems alright; use it
+  //- looks fine; use it
   this._options = options;
 }
 
 //========//========//========//========//========//========//========//========
-//- void validateDomNode(DomNode domNode)
+//- void validateDomNode(DomNode root)
 
-validateDomNode(domNode) {
-  assert(isObjectInstance(domNode), err.INVALID_ROOT);
-  let node = new CNodeProxy(this._options, domNode, null);
+validateDomNode(root) {
+  //- root must at least be an object
+  assert(isObjectInstance(root), err.INVALID_ROOT);
+  
+  //- now, that root is an object, wrap it up
+  let node = new CNodeProxy(this._options, root, null);
 
+  //- verify that root supports the properties of a DOM element
   assert(node.isElement, err.INVALID_ROOT);
 
-  //- if the root node is itself hidden, node.innerOutline will be null
-  //- disallow hidden root nodes for the moment;
-  //  to make sure outline is set in all the other cases.
-  assert(!node.isHidden, err.INVALID_ROOT);
-
-  //- must starti with a sec root or a sec content element
+  //- root must be a sectioning root (SR) or a sectioning content (SC) element
   assert((node.isSR || node.isSC), err.INVALID_ROOT);
+
+  //- if the root is itself hidden, its outline will be null
+  //- TODO - disallow hidden root nodes for the moment
+  assert((node.isHidden !== true), err.INVALID_ROOT);
   
-  //- seems alright; use it
+  //- looks fine; use it
   this._startingNode = node;
 }
 
@@ -176,8 +181,8 @@ traverseInTreeOrder() {
   enter: while(this._node !== null) {
     this.onEnter();
     
-    if(this._type === CT_HIDE) {
-      next = null;//- hide all child nodes, if any
+    if(this._type === CT_IGNORE) {
+      next = null;//- ignore all child nodes, if any
     } else {
       next = this._node.firstChild;
     }
@@ -223,192 +228,202 @@ traverseInTreeOrder() {
 //- void onEnter()
 
 onEnter() {
-  //# check the current context first
-  if(!this._stack.isEmpty) {
+  //- check the current context first
+  if(this._type !== CT_NONE) {
     let leave = this.onContext_enter();
     if(leave === true) return;//- ignore
   }
   
-  //# non-element nodes
+  //- non-element nodes
   //- TEXT_NODE, COMMENT_NODE, etc.
-  if(!this._node.isElement) {
-    this.onNode_enter(); return;
+  if(this._node.isElement !== true) {
+    this.onNonElement_enter(); return;
   }
   
-  //# hidden elements
-  if(this._node.isHidden) {
-    this.onHidden_enter(); return;
+  //- hidden elements
+  if(this._node.isHidden
+  && (this._options.ignoreHiddenElements !== true)) {
+    this.onHiddenElement_enter(); return;
   }
   
-  //# sectioning root (SR) elements
+  //- sectioning root (SR) elements
   //- blockquote, body, details, dialog, fieldset, figure, td
   if(this._node.isSR) {
-    this.onSR_enter(); return;
+    this.onSRE_enter(); return;
   }
   
-  //# sectioning content (SC) elements
+  //- sectioning content (SC) elements
   //- section, article, nav, aside
   if(this._node.isSC) {
-    this.onSC_enter(); return;
+    this.onSCE_enter(); return;
   }
   
-  //# heading content (HC)
+  //- heading content (HC)
   //- h1, h2, h3, h4, h5, h6
   if(this._node.isHC) {
-    this.onHC_enter(); return;
+    this.onHCE_enter(); return;
   }
 
-  //# other elements
+  //- other elements
   if(true) {//- if(this._node.isElement) {
-    this.onOther_enter(); return;
+    this.onOtherElement_enter(); return;
   }
   
-  //# should have left by now
-  assert(false, err.INVARIANT);
+  //- should have left by now
+  assert(false, err.DEVEL);
 }
 
 //========//========//========//========//========//========//========//========
 //- void onExit()
 
 onExit() {
-  //# check the current context first
-  if(!this._stack.isEmpty) {
+  //- check the current context first
+  if(this._type !== CT_NONE) {
     let leave = this.onContext_exit();
     if(leave === true) return;//- ignore
   }
   
-  //# non-element nodes
+  //- non-element nodes
   //- TEXT_NODE, COMMENT_NODE, etc.
-  if(!this._node.isElement) {
-    this.onNode_exit(); return;
+  if(this._node.isElement !== true) {
+    this.onNonElement_exit(); return;
   }
   
-  //# hidden elements
-  if(this._node.isHidden) {
-    this.onHidden_exit(); return;
+  //- hidden elements
+  if(this._node.isHidden
+  && (this._options.ignoreHiddenElements !== true)) {
+    this.onHiddenElement_exit(); return;
   }
   
-  //# sectioning root (SR) elements
+  //- sectioning root (SR) elements
   //- blockquote, body, details, dialog, fieldset, figure, td
   if(this._node.isSR) {
-    this.onSR_exit(); return;
+    this.onSRE_exit(); return;
   }
   
-  //# sectioning content (SC) elements
+  //- sectioning content (SC) elements
   //- section, article, nav, aside
   if(this._node.isSC) {
-    this.onSC_exit(); return;
+    this.onSCE_exit(); return;
   }
   
-  //# heading content (HC)
+  //- heading content (HC)
   //- h1, h2, h3, h4, h5, h6
   if(this._node.isHC) {
-    this.onHC_exit(); return;
+    this.onHCE_exit(); return;
   }
 
-  //# other elements
+  //- other elements
   if(true) {//- if(this._node.isElement) {
-    this.onOther_exit(); return;
+    this.onOtherElement_exit(); return;
   }
   
-  //# should have left by now
-  assert(false, err.INVARIANT);
+  //- should have left by now
+  assert(false, err.DEVEL);
 }
 
 //========//========//========//========//========//========//========//========
-//# check the context first
+//- check the context first
 
 //========//========//========//========//========
 //- void onContext_enter(CNodeProxy node)
 
 onContext_enter() {
-  let context = this._stack.tos;
-
-  if(context.type === CT_HIDE) {
-    //- enter the child of a hidden node
-    //- same with inner SRs, if it was decided
-    //  to also ignore these
-    return true;//- ignore
+  if(this._type === CT_IGNORE) {
+    //- enter the child of a to-be-ignored node;
+    //  e.g. hidden elements, inner SRs, etc.
+    return true;//- leave/ignore
   }
 
-  else if(context.type === CT_HC) {
+  if(this._type === CT_HC) {
     //- enter the child of a heading
     
     if(this._options.verifyValidHtml) {
-      assert(!this._node.isSR, err.INVALID_HTML);
-      assert(!this._node.isSC, err.INVALID_HTML);
-      assert(!this._node.isHC, err.INVALID_HTML);
+      assert((this._node.isSR !== true), err.INVALID_HTML);
+      assert((this._node.isSC !== true), err.INVALID_HTML);
+      assert((this._node.isHC !== true), err.INVALID_HTML);
     }
+    
+    return false;//- continue
   }
+  
+  //- otherwise
+  return false;//- continue
 }
 
 //========//========//========//========//========
 //- void onContext_exit(CNodeProxy node)
 
 onContext_exit() {
-  let context = this._stack.tos;
-
-  if(context.node === this._node) {
-    //- whoever pushes() onto the stack
-    //  is responsible to pop()
-    //this._stack.pop();
+  if(this._stack.tos.isEmpty !== true) {
+    let context = this._stack.tos;
+    
+    if(context.node === this._node) {
+      //- whoever pushes() onto the stack
+      //  is responsible to pop()
+      return false;//- continue
+    }
+  }
+  
+  if(this._type === CT_IGNORE) {
+    //- exit the child of a to-be-ignored node;
+    //  e.g. hidden elements, inner SRs, etc.
+    //- not the to-be-ignored node itself
+    return true;//- leave/ignore
   }
 
-  else if(context.type === CT_HIDE) {
-    //- exit the child of a hidden node,
-    //  not the hidden node itself
-    //- same with inner SRs, if it was decided
-    //  to also ignore these
-    return true;//- ignore
-  }
-
-  else if(context.type === CT_HC) {
+  if(this._type === CT_HC) {
     //- exit the child of a heading
     //- not the heading itself
+    return false;//- continue
   }
+  
+  //- otherwise
+  return false;//- continue
 }
 
 //========//========//========//========//========//========//========//========
-//# non-element nodes
+//- non-element nodes
 //- TEXT_NODE, COMMENT_NODE, etc.
 
 //========//========//========//========//========
-//- void onNode_enter(CNodeProxy node)
+//- void onNonElement_enter(CNodeProxy node)
 
-onNode_enter() {
+onNonElement_enter() {
   //- ignore for the moment
 }
 
 //========//========//========//========//========
-//- void onNode_exit(CNodeProxy node)
+//- void onNonElement_exit(CNodeProxy node)
 
-onNode_exit() {
+onNonElement_exit() {
   //- that would be step (5)
   //- node.parentSection = this._section?
 }
 
 //========//========//========//========//========//========//========//========
-//# hidden elements
+//- hidden elements
 
 //========//========//========//========//========
-//- void onHidden_enter(CNodeProxy node)
+//- void onHiddenElement_enter(CNodeProxy node)
 
-onHidden_enter() {
-  //- ignore hidden nodes and any child nodes
+onHiddenElement_enter() {
   this._stack.push(new CContext(
-    this._node, this._type, this._outline, this._section));
-  this._type = CT_HIDE;
+    this._node, this._type, this._outline, this._section
+  ));
+  
+  this._type = CT_IGNORE;
 }
 
 //========//========//========//========//========
-//- void onHidden_exit(CNodeProxy node)
+//- void onHiddenElement_exit(CNodeProxy node)
 
-onHidden_exit() {
+onHiddenElement_exit() {
   let context = this._stack.pop();
   
   if(this._options.verifyInvariants) {
     assert((context.node === this._node), err.INVARIANT);
-    assert((context.type !== CT_HIDE), err.INVARIANT);
+    assert((context.type !== CT_IGNORE), err.INVARIANT);
     assert((context.outline === this._outline), err.INVARIANT);
     assert((context.section === this._section), err.INVARIANT);
   }
@@ -417,26 +432,26 @@ onHidden_exit() {
 }
 
 //========//========//========//========//========//========//========//========
-//# sectioning roots (SR)
+//- sectioning roots (SR)
 //- blockquote, body, details, dialog, fieldset, figure, td
 
 //========//========//========//========//========
-//- void onSR_enter(CNodeProxy node)
+//- void onSRE_enter(CNodeProxy node)
 
-onSR_enter() {
+onSRE_enter() {
   if(this._ignoreNextSR === true) {
-    //- this is a next/inner SR, ignore it
+    //- this SR is an inner SR, ignore it
     
     this._stack.push(new CContext(
-      this._node, this._type, this._outline, this._section));
+      this._node, this._type, this._outline, this._section
+    ));
     
-    //- indicate that all child nodes, if any, need to be ignored
-    this._type = CT_HIDE;
+    this._type = CT_IGNORE;
     return;//- we are done here
   }
   
   if(this._outline === null) {
-    //- this.rootNode is a SR, it must be processed
+    //- this SR is the rootNode, it must be processed
     
     if(this._options.verifyInvariants) {
       assert((this._node === this.rootNode), err.INVARIANT);
@@ -478,7 +493,7 @@ onSR_enter() {
   this._outline = new COutline(this._options, this._node);
 
   //- section.startingNode -> node
-  //- does not set node.parentSection!
+  //- does not set node.parentSection
   this._section = new CSection(this._options, this._node, null);
 
   //- outline.lastSection -> section
@@ -487,14 +502,14 @@ onSR_enter() {
 }
 
 //========//========//========//========//========
-//- void onSR_exit(CNodeProxy node)
+//- void onSRE_exit(CNodeProxy node)
 
-onSR_exit() {
+onSRE_exit() {
   if(this._ignoreNextSR === true) {
     let context = this._stack.pop();
     
     if(this._options.verifyInvariants) {
-      assert((context.type === CT_HIDE), err.INVARIANT);
+      assert((context.type === CT_IGNORE), err.INVARIANT);
       assert((context.node === this._node), err.INVARIANT);
       assert((context.outline === this._outline), err.INVARIANT);
       assert((context.section === this._section), err.INVARIANT);
@@ -542,13 +557,13 @@ onSR_exit() {
 }
 
 //========//========//========//========//========//========//========//========
-//# sectioning content (SC) elements
+//- sectioning content (SC) elements
 //- section, article, nav, aside
 
 //========//========//========//========//========
-//- void onSC_enter(CNodeProxy node)
+//- void onSCE_enter(CNodeProxy node)
 
-onSC_enter() {
+onSCE_enter() {
   assert(false, "TODO: still need to test this...");
   
   if(this._outline === null) {
@@ -582,7 +597,7 @@ onSC_enter() {
   this._outline = new COutline(this._options, this._node);
 
   //- section.startingNode -> node
-  //- does not set node.parentSection!
+  //- does not set node.parentSection
   this._section = new CSection(this._options, this._node, null);
 
   //- outline.lastSection -> section
@@ -591,9 +606,9 @@ onSC_enter() {
 }
 
 //========//========//========//========//========
-//- void onSC_exit(CNodeProxy node)
+//- void onSCE_exit(CNodeProxy node)
 
-onSC_exit() {
+onSCE_exit() {
   assert(false, "TODO: still need to test this...");
 
   if(this._section.hasNoHeading) {
@@ -656,14 +671,14 @@ onSC_exit() {
 }
 
 //========//========//========//========//========//========//========//========
-//# heading content (HC)
+//- heading content (HC)
 //- h1, h2, h3, h4, h5, h6
 //- h1 has highest rank, h6 has lowest rank
 
 //========//========//========//========//========
 //- voidHC on_enter(CNodeProxy node)
 
-onHC_enter() {
+onHCE_enter() {
   //- this heading element is the first one in the current
   //  section, use it as the section's heading element
   //- this is independent of the heading's actual rank
@@ -680,7 +695,7 @@ onHC_enter() {
     //  reaching this point, the first section will always have a heading
     //- when taking the following code into account, and when reaching
     //  this point, all sections in the current SR/SC have existing headings
-    assert(!this._section.hasImpliedHeading, err.INVARIANT);
+    assert((this._section.hasImpliedHeading !== true), err.INVARIANT);
   }
   
   if(true) {//- just an optional performance shortcut
@@ -744,7 +759,7 @@ onHC_enter() {
 
     //- if(node.rank >= any-rank-in-that-chain), then
     //  add the new implied section to the current outline
-    if(!parentSection.hasParentSection) {
+    if(parentSection.hasParentSection !== true) {
       if(this._options.verifyInvariants) {
         assert((parentSection === this._outline.lastSection), err.INVARIANT);
       }
@@ -775,9 +790,9 @@ onHC_enter() {
 }
 
 //========//========//========//========//========
-//- void onHC_exit(CNodeProxy node)
+//- void onHCE_exit(CNodeProxy node)
 
-onHC_exit() {
+onHCE_exit() {
   let context = this._stack.pop();
   
   if(this._options.verifyInvariants) {
@@ -789,19 +804,19 @@ onHC_exit() {
 }
 
 //========//========//========//========//========//========//========//========
-//# all other node elements
+//- all other elements
 
 //========//========//========//========//========
-//- void onOther_enter(CNodeProxy node)
+//- void onOtherElement_enter(CNodeProxy node)
 
-onOther_enter() {
+onOtherElement_enter() {
   //- ignore for the moment
 }
 
 //========//========//========//========//========
-//- void onOther_exit(CNodeProxy node)
+//- void onOtherElement_exit(CNodeProxy node)
 
-onOther_exit() {
+onOtherElement_exit() {
   //- that would be step (4's last statement)
   //- node.parentSection = this._section?
 }

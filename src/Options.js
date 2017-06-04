@@ -15,11 +15,15 @@ constructor() {
 
   //- bool isDefault { get; }
   //- bool verifyInvariants { get; }
+  //- bool ignoreHiddenElements { get; }
   //- bool ignoreInnerSR { get; }
   //- bool verifyValidHtml { get; }
+  
   //- RegExp rxSR { get; }
   //- RegExp rxSC { get; }
   //- RegExp rxHC { get; }
+  
+  //- bool allowDomEdits { get; }
 
 //private:
 
@@ -30,14 +34,19 @@ constructor() {
   //- false = trust that the outliner works perfectly
   this._verifyInvariants = true;
   
+  //- set to ignore elements that have the hidden attribute set;
+  //  i.e. this will also ignore all of their child nodes/elements
+  //- false = ignore all hidden attributes; i.e. this will treat all
+  //  elements and all of their child nodes/elements as being visible
+  this._ignoreHiddenElements = true;
+  
   //- set to ignore all inner sectioning root (SR) elements
   //- false = also create outlines for these inner SRs
   this._ignoreInnerSR = false;
   
-  //- set to verify (on the fly) that the
-  //  dom tree represents valid HTML
+  //- set to trigger an error if the algorithm can detect that the dom tree
+  //  represents invalid HTML; e.g. headings have SR/SC/HC child elements
   //- false = ignore these checks
-  //- e.g. headings have invalid child elements
   this._verifyValidHtml = true;
   
   //- a regular expression used to classify an element
@@ -56,6 +65,10 @@ constructor() {
   //  the highest rank; i.e. treated as <h1> elements
   //- dom will return a node's name/tag in uppercase letters
   this._rxHC = /^(h[1-6])$/i;
+  
+  //- set to allow modifications to the dom tree
+  //- false = disallow any modifications whatsoever
+  this._allowDomEdits = true;
 }
 
 //========//========//========//========//========//========//========//========
@@ -70,6 +83,13 @@ get isDefault() {
 
 get verifyInvariants() {
   return this._verifyInvariants;
+}
+
+//========//========//========//========//========//========//========//========
+//- bool ignoreHiddenElements { get; }
+
+get ignoreHiddenElements() {
+  return this._ignoreHiddenElements;
 }
 
 //========//========//========//========//========//========//========//========
@@ -105,6 +125,13 @@ get rxSC() {
 
 get rxHC() {
   return this._rxHC;
+}
+
+//========//========//========//========//========//========//========//========
+//- bool allowDomEdits { get; }
+
+get allowDomEdits () {
+  return this._allowDomEdits;
 }
 
 //========//========//========//========//========//========//========//========

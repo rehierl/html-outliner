@@ -124,7 +124,7 @@ execCommands(contents) {
     name = commands[name];
     
     //- ignore unknown commands
-    if(!name) continue;
+    if(commands.hasOwnProperty(name) !== true) continue;
     
     let params = result[2].split(";");
     let text = contents.substring(result[0].length);
@@ -150,7 +150,7 @@ execCommands(contents) {
 //- void onCmdHtml(String cmd, String text, String selector)
 
 onCmdHtml(name, text, selector) {
-  assert(!this._htmlContent, format(
+  assert((this._htmlContent === undefined), format(
     "script [%s]: multiple $html() commands not supported", this._absPath
   ));
   this._htmlContent = text;
