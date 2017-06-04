@@ -17,7 +17,7 @@ const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
 //*/
 
-//- identifiers for the state of this outliner automaton
+//- identifiers for the states of this outliner automaton
 const STATE_START  = 0;//- initial identifier
 const STATE_IGNORE = 1;//- when nodes have to be ignored; hidden or inner SRs
 const STATE_SR     = 2;//- for top-level and inner sectioning root (SR) elements
@@ -73,9 +73,9 @@ constructor() {
     this._node = null;
 
     //- int type
-    //- the current context type identifier
-    //- in general, its value indicates in which kind
-    //  of subtree we are currently in
+    //- the current state identifier
+    //- in general, this value indicates in what kind
+    //  of subtree is being processed
     this._state = STATE_START;
 
     //- COutline outline
@@ -182,7 +182,8 @@ traverseInTreeOrder() {
   enter: while(this._node !== null) {
     this.onEnter();
     
-    if(this._state === STATE_IGNORE) {
+    if((this._state === STATE_IGNORE)
+    && (this._options.usePerformanceShortcuts === true)) {
       next = null;//- ignore all child nodes, if any
     } else {
       next = this._node.firstChild;
@@ -370,7 +371,7 @@ onContext_exit() {
   let context = this._stack.tos;
 
   if(context.node === this._node) {
-    //- exiting the node responsible for the current state
+    //- exit the node that is responsible for the current state
     //- whoever pushes() onto the stack is responsible to pop()
     return false;//- continue
   }
@@ -379,13 +380,11 @@ onContext_exit() {
     //- should no longer happen - see traverseInTreeOrder()
     //- exit the child of a to-be-ignored node;
     //  e.g. hidden elements, inner SRs, etc.
-    //- not the to-be-ignored node itself
     return true;//- leave/ignore
   }
 
   if(this._state === STATE_HC) {
     //- exit the child of a heading
-    //- not the heading itself
     return false;//- continue
   }
   
@@ -422,7 +421,6 @@ onHiddenElement_enter() {
   this._stack.push(new CContext(
     this._node, this._state, this._outline, this._section
   ));
-  
   this._state = STATE_IGNORE;
 }
 
@@ -434,7 +432,8 @@ onHiddenElement_exit() {
   
   if(this._options.verifyInvariants) {
     assert((context.node === this._node), err.INVARIANT);
-    assert((context.state !== STATE_IGNORE), err.INVARIANT);
+    //- context.state can't be STATE_START, STATE_IGNORE
+    //- context.state could be STATE_SR, STATE_SC, STATE_HC
     assert((context.outline === this._outline), err.INVARIANT);
     assert((context.section === this._section), err.INVARIANT);
   }
@@ -458,7 +457,7 @@ onSRE_enter() {
     ));
     
     this._state = STATE_IGNORE;
-    return;//- we are done here
+    return;//- leave, we are done here
   }
   
   if(this._state === STATE_START) {
@@ -471,8 +470,8 @@ onSRE_enter() {
       assert((this._section === null), err.INVARIANT);
     }
     
-    //- all other SRs are inner SRs and therefore optional
     //- inner SRs do not contribute to the outlines of their ancestors
+    //- all other SRs are inner SRs and therefore optional
     this._ignoreNextSR = this._options.ignoreInnerSR;
   }
   
@@ -491,7 +490,7 @@ onSRE_enter() {
       //  it does not end with the beginning of this inner SR
       //
       //example: hX, dialog, ..., /dialog, p
-      //- 'p' must be associated with 'hX'
+      //- 'p' must be associated with 'hX's section
       //- 'dialog' does not end 'hX's section
       //
       //example: body, dialog, ..., /dialog, hX, /body
@@ -503,7 +502,7 @@ onSRE_enter() {
     }
   }
 
-  //- backup the surrounding context,
+  //- backup the current/surrounding context,
   //  even if it is the initial/starting context
   this._stack.push(new CContext(
     this._node, this._state, this._outline, this._section
@@ -514,6 +513,7 @@ onSRE_enter() {
   
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
+  //- TODO - implement an outline hierarchy?
   this._outline = new COutline(this._options, this._node);
 
   //- section.startingNode -> node
@@ -530,8 +530,8 @@ onSRE_enter() {
 
 onSRE_exit() {
   if(this._section.hasNoHeading) {
-    //- the current section (inside this SR) does not have
-    //  a single heading element; it ends with this SR
+    //- the current/last section (inside this SR) does not have
+    //  a heading element; it ends with this SR
     this._section.createAndSetImpliedHeading();
   }
 
@@ -554,7 +554,7 @@ onSRE_exit() {
     this._state = STATE_START;
     //- leave this._outline as result
     this._section = null;
-    return;//- the walk is over
+    return;//- leave, the walk is over
   }
 
   //- this SR is an ignored inner SR
@@ -562,36 +562,33 @@ onSRE_exit() {
   if(this._state === STATE_IGNORE) {
     if(this._options.verifyInvariants) {
       assert((context.node === this._node), err.INVARIANT);
-      assert((context.state !== STATE_IGNORE), err.INVARIANT);
+      //- context.state can't be STATE_START, STATE_IGNORE
+      //- context.state could be STATE_SR, STATE_SC, STATE_HC
       assert((context.outline === this._outline), err.INVARIANT);
       assert((context.section === this._section), err.INVARIANT);
     }
     //- restore the surrounding context
     this._state = context.state;
-    return;//- ignore this inner SR
+    return;//- leave, ignore this inner SR
   }
   
   //- this SR is a processed inner SR
   
   if(this._options.verifyInvariants) {
     assert((context.node === this._node), err.INVARIANT);
-    //- context.state can't be STATE_START, STATE_IGNORE, STATE_HC
-    //- context.state could be STATE_SR, STATE_SC
+    //- context.state can't be STATE_START, STATE_IGNORE
+    //- context.state could be STATE_SR, STATE_SC, STATE_HC
     assert((context.outline !== this._outline), err.INVARIANT);
     assert((context.section !== this._section), err.INVARIANT);
   }
 
   //- restore the surrounding context
-  //- node.innerOutline (inner) and context.outline (outer)
+  //- this._outline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
-  //- context.section (outer) must not be altered;
-  //  SRs must not contribute to ancestor sectioning elements
+  this._state = context.state;
   this._outline = context.outline;
+  //- continue the section (in front of this SR)
   this._section = context.section;
-
-  //- TODO - implement a hierarchy of outlines?
-  //- make node.innerOutline an inner outline of this._outline?
-  //context.outline.appendOutline(node.innerOutline)
 }
 
 //========//========//========//========//========//========//========//========
@@ -607,11 +604,12 @@ onSCE_enter() {
     
     if(this._options.verifyInvariants) {
       assert((this._node === this.rootNode), err.INVARIANT);
+      //assert((this._state === STATE_START), err.INVARIANT);
       assert((this._outline === null), err.INVARIANT);
       assert((this._section === null), err.INVARIANT);
     }
     
-    //- all SRs are inner SRs and therefore optional
+    //- therefore, all SRs are optional inner SRs
     //- inner SRs do not contribute to the outlines of their ancestors
     this._ignoreNextSR = this._options.ignoreInnerSR;
   }
@@ -621,6 +619,8 @@ onSCE_enter() {
     
     if(this._options.verifyInvariants) {
       assert((this._node !== this.rootNode), err.INVARIANT);
+      //- this._state can't be STATE_START, STATE_IGNORE
+      //- this._state could be STATE_SR, STATE_SC, STATE_HC
       assert((this._outline !== null), err.INVARIANT);
       assert((this._section !== null), err.INVARIANT);
     }
@@ -650,6 +650,7 @@ onSCE_enter() {
 
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
+  //- TODO - implement an outline hierarchy?
   this._outline = new COutline(this._options, this._node);
 
   //- section.startingNode -> node
@@ -666,8 +667,8 @@ onSCE_enter() {
 
 onSCE_exit() {
   if(this._section.hasNoHeading) {
-    //- the current section (inside this SC) does not have
-    //  a single heading element; it ends with this SC
+    //- the current/last section (inside this SC) does not have
+    //  a heading element; it ends with this SC
     this._section.createAndSetImpliedHeading();
   }
 
@@ -697,36 +698,33 @@ onSCE_exit() {
   
   if(this._options.verifyInvariants) {
     assert((context.node === this._node), err.INVARIANT);
-    //- context.state can't be STATE_START, STATE_IGNORE, STATE_HC
-    //- context.state could be STATE_SR, STATE_SC
+    //- context.state can't be STATE_START, STATE_IGNORE
+    //- context.state could be STATE_SR, STATE_SC, STATE_HC
     assert((context.outline !== this._outline), err.INVARIANT);
     assert((context.section !== this._section), err.INVARIANT);
   }
 
-  //- restore the surrounding context
-  //- node.innerOutline (inner) and context.outline (outer)
-  //  are, up to this point, completely separate from each other
-  //- context.section (outer) must still be altered;
-  //  SCs do contribute to ancestor sectioning elements
-  this._outline = context.outline;
-  this._section = context.section;
-
   //example: body, h1-A, h2-B, section, p, /body
+  //- h1-A will become the heading of body's first explicit section
   //- 'section' ends h2-B's implicit section
   //- 'p' must be associated with body's explicit section;
-  //  h1-A will become the heading of body's explicit section
 
   //example: body, h1-A, h1-B, section, ..., /section, p, /body
   //- exit 'section', i.e. we have reached '/section';
   //  in that case (this._section !== this._outline.lastSection)?
+  
+  //- SCs do contribute to ancestor sectioning elements
+  //- this._outline (inner) and context.outline (outer)
+  //  are, up to this point, completely separate from each other
+  //- context.section has ended with the beginning of this SC
 
-  //- currentSection = currentOutline.lastSection
-  this._section = this._outline.lastSection;
-
-  //- Section.appendOutline(outline) -> unclear meaning of this operation
-  //- currentSection.appendOutline(node.innerOutline);
-  //- shouldn't it say currentOutline.appendOutline() ???
-  let sections = this._node.innerOutline.sections;
+  //- pseudocode-27: currentOutline = stack.pop()
+  //- pseudocode-28: currentSection = currentOutline.lastSection
+  //- pseudocode-29: currentSection.appendOutline(node.innerOutline);
+  
+  //----------------- why add to lastSection and not to the outline itself ?!?
+  this._section = context.outline.lastSection;
+  let sections = this._outline.sections;
 
   for(let ix=0, ic=sections.length; ix<ic; ix++) {
     let section = sections[ix];
@@ -735,9 +733,11 @@ onSCE_exit() {
     this._section.addSubSection(section);
   }
 
-  //- TODO - implement a hierarchy of outlines?
-  //- make node.innerOutline an inner outline of this._outline?
-  //context.outline.appendOutline(node.innerOutline)
+  //- restore the surrounding context
+  this._state = context.state;
+  this._outline = context.outline;
+  //- context.section is no longer relevant
+  //this._section = context.section;
 }
 
 //========//========//========//========//========//========//========//========
@@ -754,63 +754,79 @@ onHCE_enter() {
   //- this is independent of the heading's actual rank
   if(this._section.hasNoHeading) {
     this._section.heading = this._node;
+    
     this._stack.push(new CContext(
       this._node, this._state, this._outline, this._section));
     this._state = STATE_HC;
-    return;//- we are done here
+    return;//- leave, we are done here
   }
 
   if(this._options.verifyInvariants) {
     //- when entering a SR/SC, a new section will be created that has no
-    //  heading; the first if-statement will set that heading; so, when
-    //  reaching this point, the first section will always have a heading
+    //  heading; the if-statement above will set that heading; so, when
+    //  reaching this point, the first section will always have an existing
+    //  heading that has a rank associated with it
     //- when taking the following code into account, and when reaching
-    //  this point, all sections in the current SR/SC have existing headings
+    //  this point after having entered previous headings, it can be assumed
+    //  that all sections in the current SR/SC have an existing heading
+    //- for each section within this sectioning element, the following is true:
+    //  (section.heading.rank < section.parentSection.heading.rank)
+    //- siblings don't necessarily have equal rank
     assert((this._section.hasImpliedHeading !== true), err.INVARIANT);
+    assert((this._section.hasHeading === true), err.INVARIANT);
   }
   
-  if(true) {//- just an optional performance shortcut
-    let lastSection = this._outline.lastSection;
+  //- the closest section that has highest rank
+  let lastSection = this._outline.lastSection;
+  
+  if(this._options.usePerformanceShortcuts === true) {
+    //- this is just an optional performance shortcut
     
     if(this._options.verifyInvariants) {
       //- lastSection always has a heading - see above
       assert(lastSection.hasHeading, err.INVARIANT);
-      //- lastSection must always be on the same chain
+      //- lastSection must be an ancestor of the current section
       assert((lastSection === this._section)
         || lastSection.isAncestorOf(this._section), err.INVARIANT);
+      //- taking the below loop into account, ....
     }
     
-    //- if we already know, that we will have to add the new section
-    //  to the current outline, then there is no need to go up the chain
+    //- if we already know, that we'll have to add the new section
+    //  to the current outline, then there is no need to go up the hierarchy
     if(this._node.rank >= lastSection.heading.rank) {
       let section = new CSection(this._options, this._node, this._node);
       this._outline.addSection(section);
       this._section = section;
+      
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
       this._state = STATE_HC;
-      return;//- we are done here
+      return;//- leave, we are done here
     }
   }
     
-  //- the current heading node must now be used to create a new implied
+  //- the current heading element must now be used to create a new implied
   //  section, with itself as the new section's heading element
   //- before that, we need to figure out where to put that new section
   let parentSection = this._section;
   
   while(true) {
     if(this._options.verifyInvariants) {
-      //- parentSection.heading.rank will fail for non-headings;
-      //  rank is only defined for existing headings; i.e. not for
+      //- parentSection.heading.rank will fail for non-headings
+      //- rank is only defined for existing headings; i.e. not for
       //  implied ones, and certainly not for null values.
+      //- but, as stated before, all sections inside the current sectioning
+      //  element, when reaching this point, already have a heading element
       assert(parentSection.hasHeading, err.INVARIANT);
     }
 
-    //- if(node.rank < currentSection.heading.rank), then
-    //  add the new section as a sub-section to currentSection,
-    //  otherwise go up the chain/hierarchy
     if(this._node.rank < parentSection.heading.rank) {
-      //
+      //- add the new section as a sub-section to parentSection
+      
+      if(this._options.verifyInvariants) {
+        //- siblings don't necessarily have equal rank
+      }
+      
       //example: body; h1-A; h2-B; /body
       //- enter h2-B; won't loop; add subsection to h1-A
       //
@@ -819,41 +835,44 @@ onHCE_enter() {
       //
       //example: body; h1-A; h2-B; h2-C /body
       //- enter h2-C; loop once; add subsection to h1-A
-      //
       
       let section = new CSection(this._options, this._node, this._node);
       parentSection.addSubSection(section);
       this._section = section;
+      
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
       this._state = STATE_HC;
-      return;//- we are done here
+      return;//- leave, we are done here
     }
 
-    //- if(node.rank >= any-rank-in-that-chain), then
-    //  add the new implied section to the current outline
     if(parentSection.hasParentSection !== true) {
+      //- add the new implied section to the current outline
+      //- see the performance shortcut above
+    
       if(this._options.verifyInvariants) {
-        assert((parentSection === this._outline.lastSection), err.INVARIANT);
+        assert((parentSection === lastSection), err.INVARIANT);
+        assert((this._node.rank >= lastSection.heading.rank), err.INVARIANT);
+        assert((this._options.usePerformanceShortcuts !== true), err.INVARIANT);
       }
       
-      //
       //example: body; h1-A; h1-B /body
       //- enter h1-B; add a new section to the current outline
       //
       //example: body; h2-A; h1-B /body
       //- enter h1-B; add a new section to the current outline
-      //
       
       let section = new CSection(this._options, this._node, this._node);
       this._outline.addSection(section);
       this._section = section;
+      
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
       this._state = STATE_HC;
-      return;//- we are done here
+      return;//- leave, we are done here
     }
     
+    //- otherwise go up the chain/hierarchy
     //- heading elements are part of their surrounding parent sectioning
     //  element, and not of any other ancestor sectioning element
     //- this requires that going up the chain using the section's
@@ -861,6 +880,9 @@ onHCE_enter() {
     //- that is a guaranteed fact; see how SRs/SCs are dealt with
     parentSection = parentSection.parentSection;
   }//- while
+  
+  //- should have left by now
+  assert(false, err.DEVEL);
 }
 
 //========//========//========//========//========
@@ -872,10 +894,14 @@ onHCE_exit() {
   
   if(this._options.verifyInvariants) {
     assert((context._node === this._node), err.INVARIANT);
-    assert((context._state === STATE_HC), err.INVARIANT);
+    //- context.state can't be STATE_START, STATE_IGNROE
+    //- context.state could be STATE_SR, STATE_SC, STATE_HC
     assert((context._outline === this._outline), err.INVARIANT);
     assert((context._section === this._section), err.INVARIANT);
   }
+  
+  //- restore the surrounding context
+  this._state = context.state;
 }
 
 //========//========//========//========//========//========//========//========

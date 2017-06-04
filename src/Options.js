@@ -30,6 +30,9 @@ constructor() {
   //- a flag to indicate that all options have default values
   this._isDefault = true;
   
+  //- set to use performance shortcuts
+  this._usePerformanceShortcuts = false;
+  
   //- set to verify all invariants
   //- false = trust that the outliner works perfectly
   this._verifyInvariants = true;
@@ -76,6 +79,12 @@ constructor() {
 
 get isDefault() {
   return this._isDefault;
+}
+
+//========//========//========//========//========//========//========//========
+
+get usePerformanceShortcuts() {
+  return this._usePerformanceShortcuts;
 }
 
 //========//========//========//========//========//========//========//========
