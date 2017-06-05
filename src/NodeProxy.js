@@ -54,6 +54,7 @@ constructor(options, node, parentNode) {
   //- CNodeProxy parentNode { get; }
   //- CNodeProxy firstChild { get; }
   //- CNodeProxy nextSibling { get; }
+  //- CNodeProxy querySelector(String selector)
 
   //- bool isElement { get; }
   //- bool isHidden { get; }
@@ -240,7 +241,7 @@ get nodeName() {
 get isElement() {
   if(this._isElement === undefined) {
     try {
-      assert(this.isDomNode());//- not even a dom node
+      assert(this.isDomNode === true);//- not even a dom node
       let result = undefined;
       
       result = this._node.nodeType;
@@ -251,6 +252,9 @@ get isElement() {
       
       result = this._node.tagName;//- same as .nodeName
       assert(typeof result === "string");//- not an element
+      
+      result = this._node.querySelector;
+      assert(typeof result === "function");//- not an element
       
       this._isElement = true;
     } catch(error) {
@@ -280,6 +284,25 @@ get isHidden() {
 get tagName() {
   //- by definition (.nodeName === .tagName)
   return this.nodeName;
+}
+
+//========//========//========//========//========//========//========//========
+
+querySelector(selector) {
+  let node = null;
+  
+  try {
+    node = this._node.querySelector(selector);
+  } catch(error) {
+    //- silently ignore
+    node = null;
+  }
+  
+  if(node === null) {
+    return null;
+  } else {
+    return new CNodeProxy(this._options, node, null);
+  }
 }
 
 //========//========//========//========//========//========//========//========

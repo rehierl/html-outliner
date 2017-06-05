@@ -65,7 +65,7 @@ $text = a stringified object in JSON format
 ```
 
 * $text must be a JSON string that can be parsed into an object. This object
-  will then be used as options argument when running the outliner.
+  will be used as the outliner's options argument.
 * Each test script may contain at most one $test.$options() command.
 
 ## $outline()

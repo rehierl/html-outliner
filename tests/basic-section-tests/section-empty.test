@@ -3,7 +3,8 @@ $test.$comment() ##########
 $test.$options()
 
 {
-  "usePerformanceShortcuts": false,
+  "selector": "section",
+  "verifyInvariants": true,
   "rxHC": "/^(h|h[1-6])$/i"
 }
 
@@ -11,4 +12,6 @@ $test.$comment() ##########
 $test.$html(body)
 
 <body>
+  <section>
+  </section>
 </body>

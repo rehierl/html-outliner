@@ -31,6 +31,11 @@ constructor() {
   //- a flag to indicate that all options have default values
   this._isDefault = true;
   
+  //- a CSS selector to use on the supplied starting node
+  //- won't be used if empty (""), must be valid CSS syntax if non-empty
+  //- body.querySelector("body") won't find anything
+  this._selector = "";
+  
   //- set to use performance shortcuts
   this._usePerformanceShortcuts = false;
   
@@ -82,6 +87,12 @@ constructor() {
 
 get isDefault() {
   return this._isDefault;
+}
+
+//========//========//========//========//========//========//========//========
+
+get selector() {
+  return this._selector;
 }
 
 //========//========//========//========//========//========//========//========
@@ -155,11 +166,17 @@ combine(optionsArg) {
   function isBool(name, value) {
     return { isValid: (typeof value === "boolean"), value: value };
   }
+  
+  function isString(name, value) {
+    return { isValid: (typeof value === "string"), value: value };
+  }
 
   function isRegExp(name, value) {
     try {
+      //- verify the regular expression
+      //  i.e. SyntaxError if invalid
       let rx = new RegExp(value);
-      rx.test("");//- will this trigger an error?
+      //rx.test("");//- necessary?
       return { isValid: true, value: rx };
     } catch(error) {
       return { isValid: false, value: null };
@@ -168,6 +185,7 @@ combine(optionsArg) {
   
   let optionsMap = {
     //isDefault: not-allowed
+    selector: isString,
     usePerformanceShortcuts: isBool,
     verifyInvariants: isBool,
     ignoreHiddenAttributes: isBool,

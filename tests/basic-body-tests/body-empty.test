@@ -1,0 +1,15 @@
+
+$test.$comment() ##########
+$test.$options()
+
+{
+  "selector": "",
+  "verifyInvariants": true,
+  "rxHC": "/^(h|h[1-6])$/i"
+}
+
+$test.$comment() ##########
+$test.$html(body)
+
+<body>
+</body>

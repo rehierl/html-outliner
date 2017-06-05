@@ -184,6 +184,13 @@ validateDomNode(root) {
 
   //- verify that root supports the properties of a DOM element
   assert(node.isElement, err.INVALID_ROOT);
+  
+  if(this._options.selector !== "") {
+    //- body.querySelector("body") will return null
+    node = node.querySelector(this._options.selector);
+    assert((node !== null), err.INVALID_OPTIONS);
+    assert(node.isElement, err.INVALID_OPTIONS);
+  }
 
   //- root must be a sectioning root (SR) or a sectioning content (SC) element
   assert((node.isSR || node.isSC), err.INVALID_ROOT);
@@ -425,6 +432,7 @@ onContext_exit() {
 
 onNonElement_enter() {
   //- ignore for the moment
+  return;
 }
 
 //========//========//========//========//========
@@ -433,6 +441,7 @@ onNonElement_enter() {
 onNonElement_exit() {
   //- that would be step (5)
   //- node.parentSection = this._section?
+  return;
 }
 
 //========//========//========//========//========//========//========//========
@@ -492,7 +501,7 @@ onSRE_enter() {
     //- this SR is the root sectioning element, it must be processed
     
     if(this._options.verifyInvariants) {
-      assert((this._node === this.rootNode), err.INVARIANT);
+      assert((this._node === this._startingNode), err.INVARIANT);
       //assert((this._state === STATE_START), err.INVARIANT);
       assert((this._outline === null), err.INVARIANT);
       assert((this._section === null), err.INVARIANT);
@@ -507,7 +516,7 @@ onSRE_enter() {
     //- this SR is an inner SR of some other SR/SC
     
     if(this._options.verifyInvariants) {
-      assert((this._node !== this.rootNode), err.INVARIANT);
+      assert((this._node !== this._startingNode), err.INVARIANT);
       //assert((this._state !== STATE_START), err.INVARIANT);
       assert((this._outline !== null), err.INVARIANT);
       assert((this._section !== null), err.INVARIANT);
@@ -631,7 +640,7 @@ onSCE_enter() {
     //- this SC is the root sectioning element
     
     if(this._options.verifyInvariants) {
-      assert((this._node === this.rootNode), err.INVARIANT);
+      assert((this._node === this._startingNode), err.INVARIANT);
       //assert((this._state === STATE_START), err.INVARIANT);
       assert((this._outline === null), err.INVARIANT);
       assert((this._section === null), err.INVARIANT);
@@ -646,7 +655,7 @@ onSCE_enter() {
     //- this SC is child of some other SR/SC
     
     if(this._options.verifyInvariants) {
-      assert((this._node !== this.rootNode), err.INVARIANT);
+      assert((this._node !== this._startingNode), err.INVARIANT);
       //- this._state can't be STATE_START, STATE_IGNORE
       //- this._state could be STATE_SR, STATE_SC, STATE_HC
       assert((this._outline !== null), err.INVARIANT);
@@ -940,6 +949,7 @@ onHCE_exit() {
 
 onOtherElement_enter() {
   //- ignore for the moment
+  return;
 }
 
 //========//========//========//========//========
@@ -948,6 +958,7 @@ onOtherElement_enter() {
 onOtherElement_exit() {
   //- that would be step (4's last statement)
   //- node.parentSection = this._section?
+  return;
 }
 
 //========//========//========//========//========//========//========//========
