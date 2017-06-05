@@ -9,7 +9,7 @@ const JSDOM = require("jsdom").JSDOM;
 
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
-const CAlgorithm = require("../src/Algorithm.js");
+const COutliner = require("../src/Algorithm.js");
 //*/
 
 module.exports = class CScriptFile {
@@ -41,6 +41,9 @@ constructor() {
   //- the absolute path of a script file
   //- may contain forward and/or backward slashes
   this._absPath = undefined;
+  
+  //- the options argument to use when running the outliner.
+  this._optionsArg = undefined;
 
   //- the html document string from which to create the outline.
   this._htmlContent = undefined;
@@ -95,48 +98,54 @@ execCommands(contents) {
   }
   
   assert((offsets.length > 0), format(
-    "script [%s]: has no command at all", this._absPath
+    "script [%s]: contains no commands", this._absPath
   ));
-  
-  let commands = {
-    "html": "onCmdHtml",
-    "outline": "onCmdOutline"
-  };
   
   let ic = offsets.length;
   offsets.push(contents.length);
   
+  let commandsMap = {
+    "html": "onCmdHtml",
+    "options": "onCmdOptions",
+    "outline": "onCmdOutline"
+  };
+  
   for(let ix=0; ix<ic; ix++) {
     let command = contents.substring(offsets[ix], offsets[ix+1]);
-    let result = rxCommand.exec(command);
+    let match = rxCommand.exec(command);
     
-    assert((result !== null), format(
+    assert((match !== null), format(
       "script [%s]: has invalid command syntax", this._absPath
     ));
     
+    //- "$test.$name() text" => name(name, text, "")
+    //  i.e. there will always be at least one parameter,
+    //  even if its value is set to ""
     //- "$test.$name(param) text" => name(name, text, param)
     //- "$test.$name(p1; p2) text" => name(name, text, p1, p2)
-    //- "$test.$name()" => name(name, "", "")
-    //- there will always be a at least one parameter, even if
-    //  its value is set to ""
     
-    let name = result[1];
-    name = commands[name];
+    let name = match[1];
     
-    //- ignore unknown commands
-    if(commands.hasOwnProperty(name) !== true) continue;
+    if(commandsMap.hasOwnProperty(name) !== true) {
+      //- ignore unknown commands
+      continue;
+    }
     
-    let params = result[2].split(";");
-    let text = contents.substring(result[0].length);
+    let params = match[2].split(";");
+    let text = command.substring(match[0].length);
     params.unshift(name, text);
     
+    //- trim all the arguments
     for(let ix=0, ic=params.length; ix<ic; ix++) {
       params[ix] = params[ix].trim();
     }
     
+    //- select the command's handler function
+    name = commandsMap[name];
     let fn = this[name];
     
-    assert(fn, format(
+    //- if this fails, update the commandsMap
+    assert((fn !== undefined), format(
       "script [%s]: [%s] is an unknown command",
       this._absPath, name
     ));
@@ -147,21 +156,57 @@ execCommands(contents) {
 }
 
 //========//========//========//========//========//========//========//========
+
+onCmdOptions(name, text) {
+  assert((this._optionsArg === undefined), format(
+    "script [%s]: multiple $options() commands not supported", this._absPath
+  ));
+  
+  let options = undefined;
+  
+  try {
+    //- note that "null", "false", "123", "[]", "{}", etc.
+    //  are all complete and valid JSON strings
+    options = JSON.parse(text);
+  } catch(error) {
+    let outer = new Error(format(
+      "script [%s]: failed JSON text from the $options() command", this._absPath));
+    outer.inner = error;
+    throw outer;
+  }
+  
+  assert(((typeof options) === "object"), format(
+    "script [%s]: the $options() command must define an object", this._absPath
+  ));
+  
+  //- could still be 
+  let result = Object.prototype.toString.call(options);
+  
+  assert((result === "[object Object]"), format(
+    "script [%s]: the $options() command must define an object", this._absPath
+  ));
+  
+  this._optionsArg = options;
+}
+
+//========//========//========//========//========//========//========//========
 //- void onCmdHtml(String cmd, String text, String selector)
 
 onCmdHtml(name, text, selector) {
   assert((this._htmlContent === undefined), format(
     "script [%s]: multiple $html() commands not supported", this._absPath
   ));
+  
   this._htmlContent = text;
-  this._htmlSelector = (selector !== "") ? selector: "body";
+  this._htmlSelector = (selector !== "") ? selector : "body";
 }
 
 //========//========//========//========//========//========//========//========
 //- void onCmdOutline(String cmd, String text, String line)
 
 onCmdOutline(name, text, line) {
-  //- currently ignored
+  //- TODO - currently ignored
+  return;
 }
 
 //========//========//========//========//========//========//========//========
@@ -169,6 +214,9 @@ onCmdOutline(name, text, line) {
 
 run() {
   let dom = null;
+  
+  assert((this._htmlContent !== undefined), format(
+    "script [%s]: has no HTML content", this._absPath));
   
   try {//- read the dom tree
     dom = new JSDOM(this._htmlContent, {
@@ -180,8 +228,7 @@ run() {
     });
   } catch(error) {
     let outer = new Error(format(
-      "script [%s]: failed to read the DOM tree", this._absPath
-    ));
+      "script [%s]: failed to read the DOM tree", this._absPath));
     outer.inner = error;
     throw outer;
   }
@@ -193,18 +240,21 @@ run() {
     let root = doc.querySelector(this._htmlSelector);
     
     assert((root !== null), format(
-      "script [%s]: no node found using selector [%s]",
-      this._absPath, this._htmlSelector
-    ));
+      "script [%s]: no node found using the supplied selector [%s]",
+      this._absPath, this._htmlSelector));
     
-    let algorithm = new CAlgorithm();
-    outline = algorithm.createOutline(root);
+    if(this._optionsArg === undefined) {
+      let outliner = new COutliner();
+      outline = outliner.createOutline(root, {});
+    } else {
+      let outliner = new COutliner();
+      outline = outliner.createOutline(root, this._optionsArg);
+    }
 
-    //- @todo - continue here
+    //- TODO - continue here
   } catch(error) {
     let outer = new Error(format(
-      "script [%s]: failed to create the outline", this._absPath
-    ));
+      "script [%s]: failed to create the outline", this._absPath));
     outer.inner = error;
     throw outer;
   } finally {
@@ -218,5 +268,5 @@ run() {
 };//- module.exports
 
 //* must appear below module.exports (cyclic require statements)
-const CAlgorithm = require("../src/Algorithm.js");
+const COutliner = require("../src/Algorithm.js");
 //*/

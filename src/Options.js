@@ -4,6 +4,7 @@
 const assert = require("assert");
 
 const err = require("./errorMessages.js");
+const isObjectInstance = require("./isObjectInstance.js");
 
 module.exports = class COptions {
 //========//========//========//========//========//========//========//========
@@ -54,19 +55,21 @@ constructor() {
   
   //- a regular expression used to classify an element
   //  as sectioning root (SR) element
-  //- dom will return a node's name/tag in uppercase letters
+  //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
   this._rxSR = /^(blockquote|body|details|dialog|fieldset|figure|td)$/i;
   
   //- a regular expression used to classify an element
   //  as sectioning content (SC) element
-  //- dom will return a node's name/tag in uppercase letters
+  //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
   this._rxSC = /^(article|aside|nav|section)$/i;
   
   //- a regular expression used to classify an element
   //  as heading content (HC) element
+  //- allows to ignore standard heading elements; e.g. /^(h[1-4])$/i
+  //- allows to use non-standard heading elements; e.g. /^(h|h[1-6])$/i
   //- non-standard heading elements will be associated with
   //  the highest rank; i.e. treated as <h1> elements
-  //- dom will return a node's name/tag in uppercase letters
+  //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
   this._rxHC = /^(h[1-6])$/i;
   
   //- set to allow modifications to the dom tree
@@ -145,13 +148,72 @@ get allowDomEdits () {
 
 //========//========//========//========//========//========//========//========
 //- void combine(Object optionsArg)
-//- void combine(String optionsArg)
-//- void combine(COptions optionsArg)
 
 combine(optionsArg) {
-  //- i.e. needs to be implemented
-  assert(false, err.DEVEL);
-  this._isDefault = false;
+  assert(isObjectInstance(optionsArg), err.INVALID_OPTIONS);
+  
+  function isBool(name, value) {
+    return { isValid: (typeof value === "boolean"), value: value };
+  }
+
+  function isRegExp(name, value) {
+    try {
+      let rx = new RegExp(value);
+      rx.test("");//- will this trigger an error?
+      return { isValid: true, value: rx };
+    } catch(error) {
+      return { isValid: false, value: null };
+    }
+  }
+  
+  let optionsMap = {
+    //isDefault: not-allowed
+    usePerformanceShortcuts: isBool,
+    verifyInvariants: isBool,
+    ignoreHiddenAttributes: isBool,
+    ignoreInnerSR: isBool,
+    verifyValidHtml: isBool,
+    rxSR: isRegExp,
+    rxSC: isRegExp,
+    rxHC: isRegExp,
+    allowDomEdits: isBool
+  };
+  
+  let names = Object.getOwnPropertyNames(optionsArg);
+  let ic = names.length;
+  let valuesMap = {};
+  
+  //- validate optionsArg's values
+  
+  for(let ix=0; ix<ic; ix++) {
+    let name = names[ix];
+    let value = optionsArg[name];
+    let handler = optionsMap[name];
+    
+    //- unknown/invalid option/setting
+    assert((handler !== undefined), err.INVALID_OPTIONS);
+    
+    //- option/setting has an invalid value
+    let result = handler(name, value);
+    assert((result.isValid === true), err.INVALID_OPTIONS);
+    
+    //- keep the converted/canonical value
+    valuesMap[name] = result.value;
+  }
+  
+  //- use those values, if all is fine
+  
+  for(let ix=0; ix<ic; ix++) {
+    let name = names[ix];
+    let newValue = valuesMap[name];
+    
+    name = "_" + name;
+    let oldValue = this[name];
+    if(newValue === oldValue) continue;
+
+    this[name] = newValue;
+    this._isDefault = false;
+  }
 }
 
 //========//========//========//========//========//========//========//========

@@ -1,5 +1,13 @@
 
 $test.$comment() ##########
+$test.$options()
+
+{
+  "usePerformanceShortcuts": false,
+  "rxHC": "/^(h|h[1-6])$/i"
+}
+
+$test.$comment() ##########
 $test.$html(body)
 
 <body>

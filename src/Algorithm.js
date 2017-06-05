@@ -24,6 +24,22 @@ const STATE_SR     = 2;//- for top-level and inner sectioning root (SR) elements
 const STATE_SC     = 3;//- for sectioning content (SC) elements
 const STATE_HC     = 4;//- for heading content (HC) elements
 
+//state automaton:
+//- in general, the state identifiers point out what kind of subtree is processed.
+//- if(state == START): the stack is empty; otherwise, the stack is non-empty.
+//- if(state == IGNORE): the walk function traverseInTreeOrder() can use this
+//  state identifier to skip child nodes. these child nodes can be children of
+//  a hidden element, or an inner SR. the IGNORE state, when compared with the
+//  outliner's official/previous steps, can be seen as a generalization of the
+//  hidden attribute.
+//
+//stack operations:
+//- pushing the current node onto the stack is still necessary; it allows to
+//  determine when to restore the previous context. see the onContext_exit handler.
+//- when compared with the outliner's official/previous steps, also pushing the
+//  current section onto the stack is what makes a read-only mode possible.
+//  see the onSR_enter/exit handlers.
+
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
 //- new CAlgorithm() throws AssertionError
@@ -63,8 +79,8 @@ constructor() {
   //- inner SRs are optional and can be ignored
   //- this flag is used to determine what to do when
   //  entering the next SR
-  //- the first SR could be the root element itself;
-  //  i.e. must be initialized to 'false'
+  //- the first SR could be the root element itself:
+  //  ignoreNextSR must be initialized to 'false'
   this._ignoreNextSR = false;
   
   {//- current context; see CContext class
@@ -74,8 +90,6 @@ constructor() {
 
     //- int type
     //- the current state identifier
-    //- in general, this value indicates in what kind
-    //  of subtree is being processed
     this._state = STATE_START;
 
     //- COutline outline
@@ -96,6 +110,16 @@ constructor() {
 //- COutline createOutline(DomNode root)
 //- COutline createOutline(DomNode root, Object optionsArg)
 
+/*
+ * @param {DomNode} root - the DOM node to start with.
+ * @param {Object} optionsArg - the options argument to use. If missing, the
+ * previous options will be used. If the outliner runs for the first time, the
+ * previous options will match the default configuration. If optionsArg is an
+ * object, the outliner begin with the default options, override these using
+ * the supplied options argument object and uses the resulting configuration.
+ * Use an empty object, i.e. {}, to reset the outliner to the default options.
+ * @returns {Outline} - the resulting outline object.
+ */
 createOutline(root, optionsArg) {
   if(arguments.length === 1) {
     //- comment to re-use the previous options
@@ -452,6 +476,10 @@ onSRE_enter() {
   if(this._ignoreNextSR === true) {
     //- this SR is an inner SR, ignore it
     
+    if(this._options.verifyInvariants) {
+      assert((this._state !== STATE_START), err.INVARIANT);
+    }
+    
     this._stack.push(new CContext(
       this._node, this._state, this._outline, this._section
     ));
@@ -552,7 +580,7 @@ onSRE_exit() {
     }
     //- restore the surrounding context
     this._state = STATE_START;
-    //- leave this._outline as result
+    //this._outline = null;//- result
     this._section = null;
     return;//- leave, the walk is over
   }
@@ -689,7 +717,7 @@ onSCE_exit() {
     }
     //- restore the surrounding context
     this._state = STATE_START;
-    //this._outline = null;//- leave as result
+    //this._outline = null;//- result
     this._section = null;
     return;//- the walk is over
   }
