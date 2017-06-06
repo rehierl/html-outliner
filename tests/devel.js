@@ -5,8 +5,8 @@ const process = require("process");
 const assert = require("assert");
 const format = require("util").format;
 
-//* for testing purposes
-const TEST_TO_RUN = "basic-section-tests/section-empty.test";
+//*
+const TEST_TO_RUN = "basic-body-tests/body-empty.test";
 const CRepository = require("./Repository.js");
 
 (function main() {

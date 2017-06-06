@@ -10,8 +10,9 @@ const isObjectInstance = require("./isObjectInstance.js");
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
 const COptions = require("./Options.js");
-const CStack = require("./Stack.js");
+const CCurrentPath = require("./CurrentPath.js");
 const CContext = require("./Context.js");
+const CStack = require("./Stack.js");
 const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");
@@ -32,13 +33,16 @@ const STATE_HC     = 4;//- for heading content (HC) elements
 //  a hidden element, or an inner SR. the IGNORE state, when compared with the
 //  outliner's official/previous steps, can be seen as a generalization of the
 //  hidden attribute.
-//
+
 //stack operations:
 //- pushing the current node onto the stack is still necessary; it allows to
 //  determine when to restore the previous context. see the onContext_exit handler.
 //- when compared with the outliner's official/previous steps, also pushing the
 //  current section onto the stack is what makes a read-only mode possible.
 //  see the onSR_enter/exit handlers.
+
+//TODOs:
+//- in general a better error handling; use exceptions instead of asserts
 
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
@@ -49,16 +53,16 @@ constructor() {
   
 //public:
 
-  //- COutline createOutline(DomNode root) throws AssertionError
   //- COutline createOutline(DomNode root, Object optionsArg) throws AssertionError
+  //- COutline createOutline(DomNode root) throws AssertionError
   
 //private:
 
   //- void validateOptionsArg(Object optionsArg)
-  //- void validateOptionsArg(String optionsArg)
   //- void validateDomNode(DomNode root)
 
   //- void traverseInTreeOrder()
+  //- void reset()
 
   //- void onEnter()
   //- void onXXX_enter()
@@ -68,14 +72,15 @@ constructor() {
 
 //private:
 
-  //- Object options
+  //- Object _options
   //- an options object initialized to the default options
   this._options = new COptions();
 
-  //- CNodeProxy startingNode
+  //- CNodeProxy _startingNode
   //- the SR/SC node that was used to start the algorithm
   this._startingNode = null;
   
+  //- bool _ignoreNextSR
   //- inner SRs are optional and can be ignored
   //- this flag is used to determine what to do when
   //  entering the next SR
@@ -88,37 +93,62 @@ constructor() {
     //- a reference to the current node
     this._node = null;
 
-    //- int type
+    //- Anything _state
     //- the current state identifier
     this._state = STATE_START;
 
-    //- COutline outline
+    //- COutline _outline
     //- a reference to the current outline
     this._outline = null;
 
-    //- CSection section
+    //- CSection _section
     //- a reference to the current section
     this._section = null;
   }//- current context
   
-  //- CStack<CContext> stack
+  //- CStack<CContext> _stack
   //- used to save and restore the current context
   this._stack = new CStack();
+  
+  //- CCurrentPath _path
+  //- for debugging purposes only
+  //- used to maintain a path to the current location
+  //- see COptions.maintainPath
+  this._path = new CCurrentPath();
 }
 
 //========//========//========//========//========//========//========//========
-//- COutline createOutline(DomNode root)
+//- void reset()
+
+reset() {
+  this._options = new COptions();
+  this._startingNode = null;
+  this._ignoreNextSR = false;
+  this._node = null;
+  this._state = STATE_START;
+  this._outline = null;
+  this._section = null;
+  this._stack = new CStack();
+  this._path = new CCurrentPath();
+}
+
+//========//========//========//========//========//========//========//========
 //- COutline createOutline(DomNode root, Object optionsArg)
+//- COutline createOutline(DomNode root)
 
 /*
- * @param {DomNode} root - the DOM node to start with.
- * @param {Object} optionsArg - the options argument to use. If missing, the
- * previous options will be used. If the outliner runs for the first time, the
- * previous options will match the default configuration. If optionsArg is an
- * object, the outliner begin with the default options, override these using
- * the supplied options argument object and uses the resulting configuration.
- * Use an empty object, i.e. {}, to reset the outliner to the default options.
- * @returns {Outline} - the resulting outline object.
+ * @param {DomNode} root
+ * -- the DOM node to start with.
+ * @param {Object} optionsArg
+ * -- the options argument (i.e. { (option: value)* }) to use.
+ * -- The outliner begins with the default options, overrides these using the
+ * supplied options argument object and uses the resulting configuration.
+ * -- If optionsArg is missing, the previous options will be used. If the outliner
+ * runs for the first time, the previous options will match the default
+ * configuration.
+ * -- Use an empty object (i.e. {}) to reset the outliner to the default options.
+ * @returns {Outline}
+ * -- the resulting outline object.
  */
 createOutline(root, optionsArg) {
   if(arguments.length === 1) {
@@ -134,37 +164,47 @@ createOutline(root, optionsArg) {
     assert(false, err.DEVEL);
   }
 
-  //- TODO - error handling try-catch-finally
-  this.traverseInTreeOrder();
+  try {
+    this.traverseInTreeOrder();
+  } catch(error) {
+    //- TODO - better error handling
+    //- exceptions rather than asserts
+    this._path.currentPath;
+    this.reset();//- do a full reset
+    throw error;
+  }
   
   if(this._options.verifyInvariants) {
     //- verify that we have a clean exit
+    //assert(this._options.isDefault, err.INVARIANT);//- not required
     assert((this._startingNode === null), err.INVARIANT);
+    assert((this._ignoreNextSR === false), err.INVARIANT);
     assert((this._node === null), err.INVARIANT);
     assert((this._state === STATE_START), err.INVARIANT);
     assert((this._outline !== null), err.INVARIANT);//- result
     assert((this._section === null), err.INVARIANT);
     assert(this._stack.isEmpty, err.INVARIANT);
+    assert(this._path.isEmpty, err.INVARIANT);
   }
   
   let outline = this._outline;
-  this._outline = null;
+  //this._outline = null;
+  this.reset();//- safer
   return outline;
 }
 
 //========//========//========//========//========//========//========//========
 //- void validateOptionsArg(Object optionsArg)
-//- void validateOptionsArg(String optionsArg)
 
 validateOptionsArg(optionsArg) {
+  assert((arguments.length === 1), err.DEVEL);
+  //- an options argument; i.e. { (option: value)* }
+  assert(isObjectInstance(optionsArg), err.INVALID_OTPIONS);
   let options = new COptions();
   
   try {
-    //- an options argument; i.e. { (option: value)* }
-    //- a JSON string that can be parsed into an options argument
     options.combine(optionsArg);
   } catch(error) {
-    //- TODO - implement a better error handling
     assert(false, err.INVALID_OTPIONS);
   }
   
@@ -176,7 +216,7 @@ validateOptionsArg(optionsArg) {
 //- void validateDomNode(DomNode root)
 
 validateDomNode(root) {
-  //- root must at least be an object
+  assert((arguments.length === 1), err.DEVEL);
   assert(isObjectInstance(root), err.INVALID_ROOT);
   
   //- now, that root is an object, wrap it up
@@ -211,10 +251,14 @@ traverseInTreeOrder() {
   let next = null;
   
   enter: while(this._node !== null) {
+    if(this._options.maintainPath) {
+      this._path.push(this._node);
+    }
+    
     this.onEnter();
     
     if((this._state === STATE_IGNORE)
-    && (this._options.usePerformanceShortcuts === true)) {
+    && (this._options.usePerformanceShortcuts)) {
       next = null;//- ignore all child nodes, if any
     } else {
       next = this._node.firstChild;
@@ -227,6 +271,10 @@ traverseInTreeOrder() {
     
     exit: while(this._node !== null) {
       this.onExit();
+      
+      if(this._options.maintainPath) {
+        this._path.pop(this._node);
+      }
       
       next = this._node.nextSibling;
       
@@ -245,6 +293,7 @@ traverseInTreeOrder() {
         //assert((this._outline !== null), err.INVARIANT);//- result
         assert((this._section === null), err.INVARIANT);
         assert(this._stack.isEmpty, err.INVARIANT);
+        assert(this._path.isEmpty, err.INVARIANT);
       }
       
       this._node = next;
@@ -252,10 +301,7 @@ traverseInTreeOrder() {
   }//- enter
   
   this._startingNode = null;
-  //this._node = null;
-  //this._state = STATE_START;
-  //this._outline = null;//- result
-  //this._section = null;
+  this._ignoreNextSR = false;
 }
 
 //========//========//========//========//========//========//========//========
@@ -376,14 +422,10 @@ onContext_enter() {
 
   if(this._state === STATE_HC) {
     //- enter the child of a heading
-    
-    if(this._options.verifyValidHtml) {
-      //- TODO - what exactly will happen if these assertions are ignored?
-      assert((this._node.isSR !== true), err.INVALID_HTML);
-      assert((this._node.isSC !== true), err.INVALID_HTML);
-      assert((this._node.isHC !== true), err.INVALID_HTML);
-    }
-    
+    //- content model of headings: phrasing content (i.e. no SR/SC/HC)
+    assert((this._node.isSR !== true), err.INVALID_HTML);
+    assert((this._node.isSC !== true), err.INVALID_HTML);
+    assert((this._node.isHC !== true), err.INVALID_HTML);
     return false;//- continue
   }
   
@@ -431,8 +473,7 @@ onContext_exit() {
 //- void onNonElement_enter(CNodeProxy node)
 
 onNonElement_enter() {
-  //- ignore for the moment
-  return;
+  return;//- TODO - add code
 }
 
 //========//========//========//========//========
@@ -441,7 +482,7 @@ onNonElement_enter() {
 onNonElement_exit() {
   //- that would be step (5)
   //- node.parentSection = this._section?
-  return;
+  return;//- TODO - add code
 }
 
 //========//========//========//========//========//========//========//========
@@ -451,6 +492,7 @@ onNonElement_exit() {
 //- void onHiddenElement_enter(CNodeProxy node)
 
 onHiddenElement_enter() {
+  assert(false, "TEST THIS");
   this._stack.push(new CContext(
     this._node, this._state, this._outline, this._section
   ));
@@ -461,6 +503,7 @@ onHiddenElement_enter() {
 //- void onHiddenElement_exit(CNodeProxy node)
 
 onHiddenElement_exit() {
+  assert(false, "TEST THIS");
   let context = this._stack.pop();
   
   if(this._options.verifyInvariants) {
@@ -482,7 +525,8 @@ onHiddenElement_exit() {
 //- void onSRE_enter(CNodeProxy node)
 
 onSRE_enter() {
-  if(this._ignoreNextSR === true) {
+  if(this._ignoreNextSR) {
+    assert(false, "TEST THIS");
     //- this SR is an inner SR, ignore it
     
     if(this._options.verifyInvariants) {
@@ -498,6 +542,7 @@ onSRE_enter() {
   }
   
   if(this._state === STATE_START) {
+    assert(false, "TEST THIS");
     //- this SR is the root sectioning element, it must be processed
     
     if(this._options.verifyInvariants) {
@@ -513,6 +558,7 @@ onSRE_enter() {
   }
   
   else {//- if(this._state !== STATE_START) {
+    assert(false, "TEST THIS");
     //- this SR is an inner SR of some other SR/SC
     
     if(this._options.verifyInvariants) {
@@ -538,7 +584,8 @@ onSRE_enter() {
       //this._section.createAndSetImpliedHeading();
     }
   }
-
+  
+  assert(false, "TEST THIS");
   //- backup the current/surrounding context,
   //  even if it is the initial/starting context
   this._stack.push(new CContext(
@@ -567,6 +614,7 @@ onSRE_enter() {
 
 onSRE_exit() {
   if(this._section.hasNoHeading) {
+    assert(false, "TEST THIS");
     //- the current/last section (inside this SR) does not have
     //  a heading element; it ends with this SR
     this._section.createAndSetImpliedHeading();
@@ -578,6 +626,7 @@ onSRE_exit() {
   //- this SR is a top-level SR
   
   if(context.state === STATE_START) {
+    assert(false, "TEST THIS");
     if(this._options.verifyInvariants) {
       assert((context.node === this._node), err.INVARIANT);
       //assert((context.state === STATE_START), err.INVARIANT);
@@ -597,6 +646,7 @@ onSRE_exit() {
   //- this SR is an ignored inner SR
   
   if(this._state === STATE_IGNORE) {
+    assert(false, "TEST THIS");
     if(this._options.verifyInvariants) {
       assert((context.node === this._node), err.INVARIANT);
       //- context.state can't be STATE_START, STATE_IGNORE
@@ -619,6 +669,7 @@ onSRE_exit() {
     assert((context.section !== this._section), err.INVARIANT);
   }
 
+  assert(false, "TEST THIS");
   //- restore the surrounding context
   //- this._outline (inner) and context.outline (outer)
   //  are, up to this point, completely separate from each other
@@ -637,6 +688,7 @@ onSRE_exit() {
 
 onSCE_enter() {
   if(this._state === STATE_START) {
+    assert(false, "TEST THIS");
     //- this SC is the root sectioning element
     
     if(this._options.verifyInvariants) {
@@ -653,6 +705,7 @@ onSCE_enter() {
   
   else {//- if(this._state !== STATE_START) {
     //- this SC is child of some other SR/SC
+    assert(false, "TEST THIS");
     
     if(this._options.verifyInvariants) {
       assert((this._node !== this._startingNode), err.INVARIANT);
@@ -676,6 +729,7 @@ onSCE_enter() {
     }
   }
 
+  assert(false, "TEST THIS");
   //- backup the surrounding context,
   //  even if it is the initial/starting context
   this._stack.push(new CContext(
@@ -704,6 +758,7 @@ onSCE_enter() {
 
 onSCE_exit() {
   if(this._section.hasNoHeading) {
+    assert(false, "TEST THIS");
     //- the current/last section (inside this SC) does not have
     //  a heading element; it ends with this SC
     this._section.createAndSetImpliedHeading();
@@ -715,6 +770,7 @@ onSCE_exit() {
   //- this SC is a top-level SC
   
   if(context.state === STATE_START) {
+    assert(false, "TEST THIS");
     if(this._options.verifyInvariants) {
       assert((context.node === this._node), err.INVARIANT);
       //assert((context.state === STATE_START), err.INVARIANT);
@@ -734,6 +790,7 @@ onSCE_exit() {
   //- this SC is an inner SC
   
   if(this._options.verifyInvariants) {
+    assert(false, "TEST THIS");
     assert((context.node === this._node), err.INVARIANT);
     //- context.state can't be STATE_START, STATE_IGNORE
     //- context.state could be STATE_SR, STATE_SC, STATE_HC
@@ -759,6 +816,7 @@ onSCE_exit() {
   //- pseudocode-28: currentSection = currentOutline.lastSection
   //- pseudocode-29: currentSection.appendOutline(node.innerOutline);
   
+  assert(false, "TEST THIS");
   //----------------- why add to lastSection and not to the outline itself ?!?
   this._section = context.outline.lastSection;
   let sections = this._outline.sections;
@@ -790,6 +848,7 @@ onHCE_enter() {
   //  section, use it as the section's heading element
   //- this is independent of the heading's actual rank
   if(this._section.hasNoHeading) {
+    assert(false, "TEST THIS");
     this._section.heading = this._node;
     
     this._stack.push(new CContext(
@@ -810,13 +869,14 @@ onHCE_enter() {
     //  (section.heading.rank < section.parentSection.heading.rank)
     //- siblings don't necessarily have equal rank
     assert((this._section.hasImpliedHeading !== true), err.INVARIANT);
-    assert((this._section.hasHeading === true), err.INVARIANT);
+    assert((this._section.hasHeading), err.INVARIANT);
   }
   
   //- the closest section that has highest rank
   let lastSection = this._outline.lastSection;
   
-  if(this._options.usePerformanceShortcuts === true) {
+  if(this._options.usePerformanceShortcuts) {
+    assert(false, "TEST THIS");
     //- this is just an optional performance shortcut
     
     if(this._options.verifyInvariants) {
@@ -831,6 +891,7 @@ onHCE_enter() {
     //- if we already know, that we'll have to add the new section
     //  to the current outline, then there is no need to go up the hierarchy
     if(this._node.rank >= lastSection.heading.rank) {
+      assert(false, "TEST THIS");
       let section = new CSection(this._options, this._node, this._node);
       this._outline.addSection(section);
       this._section = section;
@@ -858,6 +919,7 @@ onHCE_enter() {
     }
 
     if(this._node.rank < parentSection.heading.rank) {
+      assert(false, "TEST THIS");
       //- add the new section as a sub-section to parentSection
       
       if(this._options.verifyInvariants) {
@@ -884,6 +946,7 @@ onHCE_enter() {
     }
 
     if(parentSection.hasParentSection !== true) {
+      assert(false, "TEST THIS");
       //- add the new implied section to the current outline
       //- see the performance shortcut above
     
@@ -926,6 +989,7 @@ onHCE_enter() {
 //- void onHCE_exit(CNodeProxy node)
 
 onHCE_exit() {
+  assert(false, "TEST THIS");
   //- get/retrieve the surrounding context
   let context = this._stack.pop();
   
@@ -948,8 +1012,7 @@ onHCE_exit() {
 //- void onOtherElement_enter(CNodeProxy node)
 
 onOtherElement_enter() {
-  //- ignore for the moment
-  return;
+  return;//- TODO - add code
 }
 
 //========//========//========//========//========
@@ -958,7 +1021,7 @@ onOtherElement_enter() {
 onOtherElement_exit() {
   //- that would be step (4's last statement)
   //- node.parentSection = this._section?
-  return;
+  return;//- TODO - add code
 }
 
 //========//========//========//========//========//========//========//========
@@ -966,8 +1029,9 @@ onOtherElement_exit() {
 
 //* must appear below module.exports (cyclic require statements)
 const COptions = require("./Options.js");
-const CStack = require("./Stack.js");
+const CCurrentPath = require("./CurrentPath.js");
 const CContext = require("./Context.js");
+const CStack = require("./Stack.js");
 const CNodeProxy = require("./NodeProxy.js");
 const CSection = require("./Section.js");
 const COutline = require("./Outline.js");

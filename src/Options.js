@@ -36,6 +36,10 @@ constructor() {
   //- body.querySelector("body") won't find anything
   this._selector = "";
   
+  //- allows to maintain a path of nodes from the root to the current node
+  //- set to maintain a path for debugging purposes
+  this._maintainPath = true;
+  
   //- set to use performance shortcuts
   this._usePerformanceShortcuts = false;
   
@@ -52,11 +56,6 @@ constructor() {
   //- set to ignore all inner sectioning root (SR) elements
   //- false = also create outlines for these inner SRs
   this._ignoreInnerSR = false;
-  
-  //- set to trigger an error if the algorithm can detect that the dom tree
-  //  represents invalid HTML; e.g. headings have SR/SC/HC child elements
-  //- false = ignore these checks
-  this._verifyValidHtml = true;
   
   //- a regular expression used to classify an element
   //  as sectioning root (SR) element
@@ -97,6 +96,12 @@ get selector() {
 
 //========//========//========//========//========//========//========//========
 
+get maintainPath() {
+  return this._maintainPath;
+}
+
+//========//========//========//========//========//========//========//========
+
 get usePerformanceShortcuts() {
   return this._usePerformanceShortcuts;
 }
@@ -120,13 +125,6 @@ get ignoreHiddenAttributes() {
 
 get ignoreInnerSR() {
   return this._ignoreInnerSR;
-}
-
-//========//========//========//========//========//========//========//========
-//- bool verifyValidHtml { get; }
-
-get verifyValidHtml() {
-  return this._verifyValidHtml;
 }
 
 //========//========//========//========//========//========//========//========
@@ -186,11 +184,11 @@ combine(optionsArg) {
   let optionsMap = {
     //isDefault: not-allowed
     selector: isString,
+    maintainPath: isBool,
     usePerformanceShortcuts: isBool,
     verifyInvariants: isBool,
     ignoreHiddenAttributes: isBool,
     ignoreInnerSR: isBool,
-    verifyValidHtml: isBool,
     rxSR: isRegExp,
     rxSC: isRegExp,
     rxHC: isRegExp,

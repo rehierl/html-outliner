@@ -4,8 +4,14 @@ $test.$options()
 
 {
   "selector": "",
+  "maintainPath": true,
   "verifyInvariants": true,
-  "rxHC": "/^(h|h[1-6])$/i"
+  "usePerformanceShortcuts": false,
+  "rxSR": "/^(blockquote|body|details|dialog|fieldset|figure|td)$/i",
+  "rxSC": "/^(article|aside|nav|section)$/i",
+  "rxHC": "/^(h[1-6])$/i",
+  "ignoreInnerSR": false,
+  "allowDomEdits": false
 }
 
 $test.$comment() ##########
