@@ -6,7 +6,7 @@ const assert = require("assert");
 const format = require("util").format;
 
 //*
-const TEST_TO_RUN = "basic-body-tests/body-empty.test";
+const TEST_TO_RUN = "basic-src-tests/body-dialog-3.test";
 const CRepository = require("./Repository.js");
 
 (function main() {

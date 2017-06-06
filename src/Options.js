@@ -51,7 +51,7 @@ constructor() {
   //  i.e. this will also ignore all of their child nodes/elements
   //- false = ignore all hidden attributes; i.e. this will treat all
   //  elements and all of their child nodes/elements as being visible
-  this._ignoreHiddenAttributes = true;
+  this._ignoreHiddenAttributes = false;
   
   //- set to ignore all inner sectioning root (SR) elements
   //- false = also create outlines for these inner SRs
@@ -60,11 +60,15 @@ constructor() {
   //- a regular expression used to classify an element
   //  as sectioning root (SR) element
   //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
+  //- for an options argument use "^(...)$";
+  //  the ignoreCase flag (i) will be assigned automatically
   this._rxSR = /^(blockquote|body|details|dialog|fieldset|figure|td)$/i;
   
   //- a regular expression used to classify an element
   //  as sectioning content (SC) element
   //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
+  //- for an options argument use "^(...)$";
+  //  the ignoreCase flag (i) will be assigned automatically
   this._rxSC = /^(article|aside|nav|section)$/i;
   
   //- a regular expression used to classify an element
@@ -74,6 +78,8 @@ constructor() {
   //- non-standard heading elements will be associated with
   //  the highest rank; i.e. treated as <h1> elements
   //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
+  //- for an options argument use "^(...)$";
+  //  the ignoreCase flag (i) will be assigned automatically
   this._rxHC = /^(h[1-6])$/i;
   
   //- set to allow modifications to the dom tree
@@ -173,7 +179,7 @@ combine(optionsArg) {
     try {
       //- verify the regular expression
       //  i.e. SyntaxError if invalid
-      let rx = new RegExp(value);
+      let rx = new RegExp(value, "i");
       //rx.test("");//- necessary?
       return { isValid: true, value: rx };
     } catch(error) {

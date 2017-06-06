@@ -17,7 +17,7 @@ const COutline = require("./Outline.js");
 //- used when it was determined that a section definitely has no heading
 //- this value won't be visible outside of this module;
 //  this includes that it won't be passed on as a result/return value
-const IMPLIED_HEADING = 0;
+const IMPLIED_HEADING = "implied-heading";
 
 module.exports = class CSection {
 //========//========//========//========//========//========//========//========

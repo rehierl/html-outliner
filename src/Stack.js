@@ -46,9 +46,8 @@ push(context) {
 
 pop() {
   assert((arguments.length === 0), err.DEVEL);
-  //- let it crash if that happens
-  //let len = this._buffer.length;
-  //assert((len > 0), err.INVARIANT);
+  let len = this._buffer.length;
+  assert((len > 0), err.INVARIANT);
   return this._buffer.pop();
 }
 
@@ -57,8 +56,7 @@ pop() {
 
 get tos() {
   let len = this._buffer.length;
-  //- let it crash if that happens
-  //assert((len > 0), err.INVARIANT);
+  assert((len > 0), err.INVARIANT);
   return this._buffer[len-1];
 }
 
@@ -66,8 +64,7 @@ get tos() {
 //- bool isEmpty { get; }
 
 get isEmpty() {
-  let len = this._buffer.length;
-  return (len === 0);
+  return (this._buffer.length === 0);
 }
 
 //========//========//========//========//========//========//========//========

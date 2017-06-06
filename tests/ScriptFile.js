@@ -170,7 +170,7 @@ onCmdOptions(name, text) {
     options = JSON.parse(text);
   } catch(error) {
     let outer = new Error(format(
-      "script [%s]: failed JSON text from the $options() command", this._absPath));
+      "script [%s]: failed to parse the $options() command", this._absPath));
     outer.inner = error;
     throw outer;
   }

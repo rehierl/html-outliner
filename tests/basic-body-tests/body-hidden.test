@@ -1,6 +1,0 @@
-
-$test.$comment() ##########
-$test.$html(body)
-
-<body hidden>
-</body>

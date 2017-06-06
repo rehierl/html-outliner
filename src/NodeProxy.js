@@ -173,6 +173,9 @@ get isDomNode() {
 
       result = this._node.nextSibling;
       assert((result === null) || isObjectInstance(result));//- not a node
+      
+      result = this._node.textContent;
+      assert((result === null) || (typeof result === "string"));//- not a node
 
       this._isDomNode = true;
     } catch(error) {
@@ -233,6 +236,15 @@ get nodeName() {
     this._nodeName = this._node.nodeName;
   }
   return this._nodeName;
+}
+
+//========//========//========//========//========//========//========//========
+//- String textContent { get; }
+
+get textContent() {
+  let textContent = this._node.textContent;
+  textContent = (textContent !== null) ? textContent.trim() : "";
+  return textContent;
 }
 
 //========//========//========//========//========//========//========//========

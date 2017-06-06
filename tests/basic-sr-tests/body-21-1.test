@@ -1,0 +1,23 @@
+
+$test.$comment() ##########
+$test.$options()
+
+{
+  "selector": "",
+  "maintainPath": true,
+  "verifyInvariants": true,
+  "usePerformanceShortcuts": false,
+  "rxSR": "^(blockquote|body|details|dialog|fieldset|figure|td)$",
+  "rxSC": "^(article|aside|nav|section)$",
+  "rxHC": "^(h[1-6])$",
+  "ignoreInnerSR": false,
+  "allowDomEdits": false
+}
+
+$test.$comment() ##########
+$test.$html(body)
+
+<body>
+  <h2>A</h2>
+  <h1>B</h1>
+</body>

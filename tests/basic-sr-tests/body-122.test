@@ -7,9 +7,9 @@ $test.$options()
   "maintainPath": true,
   "verifyInvariants": true,
   "usePerformanceShortcuts": false,
-  "rxSR": "/^(blockquote|body|details|dialog|fieldset|figure|td)$/i",
-  "rxSC": "/^(article|aside|nav|section)$/i",
-  "rxHC": "/^(h[1-6])$/i",
+  "rxSR": "^(blockquote|body|details|dialog|fieldset|figure|td)$",
+  "rxSC": "^(article|aside|nav|section)$",
+  "rxHC": "^(h[1-6])$",
   "ignoreInnerSR": false,
   "allowDomEdits": false
 }
@@ -18,4 +18,7 @@ $test.$comment() ##########
 $test.$html(body)
 
 <body>
+  <h1>A</h1>
+  <h2>B</h2>
+  <h2>C</h2>
 </body>

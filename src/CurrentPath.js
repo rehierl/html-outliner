@@ -2,6 +2,7 @@
 "use strict";
 
 const assert = require("assert");
+const format = require("util").format;
 
 const err = require("./errorMessages.js");
 
@@ -90,11 +91,17 @@ get currentPath() {
     
     for(let ix=0, ic=this._path.length; ix<ic; ix++) {
       let node = this._path[ix];
-      path.push(node.nodeName);
+      let part = node.nodeName;
+      
+      if(node.isHC) {
+        part = format("%s:%s", part, node.textContent);
+      }
+      
+      path.push(part);
     }
     
     path = path.join(" / ");
-    this.currentPath = path;
+    this._currentPath = path;
   }
   return this._currentPath;
 }
@@ -103,7 +110,7 @@ get currentPath() {
 //- void toString()
 
 toString() {
-  return this.currentPath;
+  return this._currentPath;
 }
 
 //========//========//========//========//========//========//========//========
