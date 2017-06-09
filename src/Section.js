@@ -13,10 +13,11 @@ const CNodeProxy = require("./NodeProxy.js");
 const COutline = require("./Outline.js");
 //*/
 
-//- this constant is use to represent implied headings
-//- used when it was determined that a section definitely has no heading
-//- this value won't be visible outside of this module;
-//  this includes that it won't be passed on as a result/return value
+//- this constant is used to represent implied headings
+//- it is used when it was determined that a section was completely processed
+//  and when no heading element was associated with it
+//- this value won't be visible outside of this module/class;
+//  i.e. it won't be passed on as a result/return value
 const IMPLIED_HEADING = "implied-heading";
 
 module.exports = class CSection {

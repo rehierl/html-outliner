@@ -41,6 +41,17 @@ const STATE_HC     = "hc";    //- for heading content (HC) elements
 //  current section onto the stack is what makes a read-only mode possible.
 //  see the onSR_enter/exit handlers.
 
+//construct of implied headings:
+//- if a section has ended and has no heading, it will be associated with an
+//  implied heading - i.e. implied headings represent two statements:
+//  (1) the section has ended - (2) the section has no heading.
+//- example tag sequence - body, SCE, /SCE, h1-A, /body
+//- depending on how exactly inner SCE's are merged into their first outer SE,
+//  an implied heading allows to prevent associating h1-A with SCE's inner
+//  last section - which is also SCE's only section
+//- depending on how exactly inner SCE's are merged into their first outer SE,
+//  the construct of implied headings mit not even be absolutely necessary
+
 //TODOs:
 //- in general a better error handling; use exceptions instead of asserts
 
@@ -819,6 +830,7 @@ onHCE_enter() {
   //- this heading element is the first one in the current
   //  section, use it as the section's heading element
   //- this is independent of the heading's actual rank
+  //- example tag sequence - body, section, /section, h1-A, /body
   if(this._section.hasNoHeading) {
     this._section.heading = this._node;
     
