@@ -12,8 +12,7 @@ algorithm by implementing it using JavaScript and Node.js.
 ## TODOs
 
 * get it running ...
-* add support for an options object (inner SRs, non-standard headings, etc.)
-* use throw statements instead of asserts
+* rework the error handling - custom exception types instead of asserts
 * publish on [npmjs.com](https://www.npmjs.com/)
 * and many more things to do ...
 

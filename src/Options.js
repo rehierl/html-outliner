@@ -176,15 +176,21 @@ combine(optionsArg) {
   }
 
   function isRegExp(name, value) {
-    try {
-      //- verify the regular expression
-      //  i.e. SyntaxError if invalid
-      let rx = new RegExp(value, "i");
-      //rx.test("");//- necessary?
-      return { isValid: true, value: rx };
-    } catch(error) {
-      return { isValid: false, value: null };
+    if(value instanceof RegExp) {
+      return { isValid: true, value: value};
     }
+    if(typeof value === "string") {
+      try {
+        //- verify the regular expression
+        //  i.e. SyntaxError if invalid
+        let rx = new RegExp(value, "i");
+        //rx.test("");//- necessary?
+        return { isValid: true, value: rx };
+      } catch(error) {
+        return { isValid: false, value: null };
+      }
+    }
+    return { isValid: false, value: null };
   }
   
   let optionsMap = {
