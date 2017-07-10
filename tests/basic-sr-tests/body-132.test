@@ -1,4 +1,12 @@
 
+This test is to verify that the 3rd heading element will trigger the creation
+of a new implicit/implied section with the 3rd HCE as its heading.
+
+In this specific case, the new implied section must be added as a new
+subsection (h2-C) to the first previous section that has a higher rank (h1-A).
+
+Note that sibling sections (h3, h2) don't necessarily have the same rank.
+
 $test.$comment() ##########
 $test.$options()
 

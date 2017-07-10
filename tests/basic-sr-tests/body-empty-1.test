@@ -1,4 +1,7 @@
 
+This basic test is to check the behavior when entering and exiting an SR
+element. Note that with this body element, there is no implicit #text node.
+
 $test.$comment() ##########
 $test.$options()
 
@@ -17,5 +20,4 @@ $test.$options()
 $test.$comment() ##########
 $test.$html(body)
 
-<body>
-</body>
+<body></body>

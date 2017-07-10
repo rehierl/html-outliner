@@ -1,4 +1,15 @@
 
+This test is to verify that the 2nd heading element will trigger the creation
+of a new implicit/implied section with the 2nd HCE as its heading.
+
+In this specific case, the new implied section must be added to body's outline
+as there is no previous section with a heading of a higher rank.
+
+The difference to "body-21-1.test" is the "usePerformanceShortcuts" setting
+which allows to skip going up the chain of previous sections by testing the
+current outline's last section if the rank of its heading is lower or equal
+to the rank of the current heading.
+
 $test.$comment() ##########
 $test.$options()
 

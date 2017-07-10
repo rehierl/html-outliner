@@ -1,4 +1,10 @@
 
+With the beginning of a SR, a new section will be created automatically. This
+test is to see that the single heading element will be assigned as heading to
+this new implicit section.
+
+Note that there are two implict and one explict #text nodes.
+
 $test.$comment() ##########
 $test.$options()
 

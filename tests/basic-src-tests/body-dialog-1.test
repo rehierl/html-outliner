@@ -1,4 +1,7 @@
 
+This test is to verify that the inner dialog SR will be processed and that it
+won't contribute to the outline of its first outer SE (i.e. the body element).
+
 $test.$comment() ##########
 $test.$options()
 

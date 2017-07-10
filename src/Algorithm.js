@@ -122,8 +122,8 @@ constructor() {
   this._stack = new CStack();
   
   //- CCurrentPath _path
-  //- for debugging purposes only
-  //- used to maintain a path to the current location
+  //- a breadcrumb path for debugging purposes only
+  //- used to maintain a path to the current node
   //- see COptions.maintainPath
   this._path = new CCurrentPath();
 }
@@ -163,12 +163,12 @@ reset() {
  */
 createOutline(root, optionsArg) {
   if(arguments.length === 1) {
-    //- comment to re-use the previous options
-    //- uncomment to use default options
+    //- use previous or default options if only one argument is provided?
+    //- comment to use previous options, uncomment to use default options
     //this._options = new COptions();
     this.validateDomNode(root);
   } else if(arguments.length === 2) {
-    //- check optionsArg first
+    //- must check optionsArg first
     this.validateOptionsArg(optionsArg);
     this.validateDomNode(root);
   } else {
@@ -192,6 +192,7 @@ createOutline(root, optionsArg) {
     assert((this._ignoreNextSR === false), err.INVARIANT);
     assert((this._node === null), err.INVARIANT);
     assert((this._state === STATE_START), err.INVARIANT);
+    //- in the future, this._outine may be null for hidden root nodes
     assert((this._outline !== null), err.INVARIANT);//- result
     assert((this._section === null), err.INVARIANT);
     assert(this._stack.isEmpty, err.INVARIANT);
@@ -246,8 +247,7 @@ validateDomNode(root) {
   //- root must be a sectioning root (SR) or a sectioning content (SC) element
   assert((node.isSR || node.isSC), err.INVALID_ROOT);
 
-  //- if the root is itself hidden, its outline will be null
-  //- TODO - allow hidden root nodes when done
+  //- if the root is itself hidden, its outline will be a null value
   assert((node.isHidden !== true), err.INVALID_ROOT);
   
   //- looks fine; use it
@@ -510,6 +510,7 @@ onHiddenElement_enter() {
 
 onHiddenElement_exit() {
   let context = this._stack.pop();
+  
   if(this._options.verifyInvariants) {
     assert((context.node === this._node), err.INVARIANT);
     //- context.state can't be STATE_IGNORE
@@ -518,6 +519,7 @@ onHiddenElement_exit() {
     assert((context.outline === this._outline), err.INVARIANT);
     assert((context.section === this._section), err.INVARIANT);
   }
+  
   this._state = context.state;
 }
 
@@ -558,7 +560,7 @@ onSRE_enter() {
   }
   
   else {//- if(this._state !== STATE_START) {
-    //- this SR is an inner SR of some other SR/SC
+    //- this SR is an inner SR to some other SR/SC
     
     if(this._options.verifyInvariants) {
       assert((this._node !== this._startingNode), err.INVARIANT);
@@ -597,6 +599,8 @@ onSRE_enter() {
 
   //- section.startingNode -> node
   //- does not set node.parentSection
+  //- TODO - to which section does a SR belong?
+  //  to the section it starts, or to the next outer section?
   this._section = new CSection(this._options, this._node, null);
 
   //- outline.lastSection -> section
@@ -837,6 +841,7 @@ onHCE_enter() {
     this._stack.push(new CContext(
       this._node, this._state, this._outline, this._section));
     this._state = STATE_HC;
+    
     return;//- leave, we are done here
   }
 
@@ -854,12 +859,12 @@ onHCE_enter() {
     assert(this._section.hasHeading, err.INVARIANT);
   }
   
-  //- the closest section that has highest rank
-  let lastSection = this._outline.lastSection;
-  
   if(this._options.usePerformanceShortcuts) {
     //- this is just an optional performance shortcut
     
+    //- the closest section that has highest rank
+    let lastSection = this._outline.lastSection;
+
     if(this._options.verifyInvariants) {
       //- lastSection always has a heading - see above
       assert(lastSection.hasHeading, err.INVARIANT);
@@ -881,7 +886,7 @@ onHCE_enter() {
       return;//- leave, we are done here
     }
     
-    //- can't take that shortcut
+    //- can't take that shortcut, so
     //- start with this._section and go up the chain
   }
     
@@ -930,6 +935,9 @@ onHCE_enter() {
       //- add the new implied section to the current outline
       //- see the performance shortcut above
     
+      //- the closest section that has highest rank
+      let lastSection = this._outline.lastSection;
+
       if(this._options.verifyInvariants) {
         assert((parentSection === lastSection), err.INVARIANT);
         assert((this._node.rank >= lastSection.heading.rank), err.INVARIANT);
@@ -972,6 +980,7 @@ onHCE_enter() {
 onHCE_exit() {
   //- get/retrieve the surrounding context
   let context = this._stack.pop();
+  
   if(this._options.verifyInvariants) {
     assert((context._node === this._node), err.INVARIANT);
     //- context.state can't be STATE_START, STATE_IGNROE
@@ -979,6 +988,7 @@ onHCE_exit() {
     assert((context._outline === this._outline), err.INVARIANT);
     assert((context._section === this._section), err.INVARIANT);
   }
+  
   this._state = context.state;
 }
 

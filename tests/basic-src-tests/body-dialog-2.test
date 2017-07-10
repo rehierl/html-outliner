@@ -1,4 +1,6 @@
 
+The difference to "body-dialog-1.test" is the "ignoreInnerSR=true" setting.
+
 $test.$comment() ##########
 $test.$options()
 

@@ -32,8 +32,14 @@ algorithm by implementing it using JavaScript and Node.js.
 This implementation is based upon:
 
 * [W3C, HTML 5.2, Editor's Draft, 2017-05-03](https://w3c.github.io/html/)
-* [4.3.9 Headings and sections](https://w3c.github.io/html/sections.html/#headings-and-sections)
-* [4.3.9.1. Creating an outline](https://w3c.github.io/html/sections.html/#creating-an-outline)
+* [4.3.9. Headings and sections](https://w3c.github.io/html/sections.html#headings-and-sections)
+* [4.3.9.1. Creating an outline](https://w3c.github.io/html/sections.html#creating-an-outline)
+
+which matched:
+
+* [W3C, HTML 5.2, Working Draft, 2017-05-09](https://www.w3.org/TR/html52/)
+* [4.3.9. Headings and sections](https://www.w3.org/TR/html52/sections.html#headings-and-sections)
+* [4.3.9.1. Creating an outline](https://www.w3.org/TR/html52/sections.html#creating-an-outline)
 
 see also:
 

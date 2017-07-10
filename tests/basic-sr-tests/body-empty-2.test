@@ -1,0 +1,33 @@
+
+This basic test is to check the behavior when entering and exiting an SR
+element. Note that the body element contains an implicit #text node.
+
+An implicit text node will also appear in case of:
+
+<body>
+</body>
+
+So it looks like implicit text nodes will appear if a start/end tag won't appear
+right next to another start/end tag. That is, there will be #text nodes, if
+there are characters in between those tags; even if those characters are
+whitespace characters.
+
+$test.$comment() ##########
+$test.$options()
+
+{
+  "selector": "",
+  "maintainPath": true,
+  "verifyInvariants": true,
+  "usePerformanceShortcuts": false,
+  "rxSR": "^(blockquote|body|details|dialog|fieldset|figure|td)$",
+  "rxSC": "^(article|aside|nav|section)$",
+  "rxHC": "^(h[1-6])$",
+  "ignoreInnerSR": false,
+  "allowDomEdits": false
+}
+
+$test.$comment() ##########
+$test.$html(body)
+
+<body> </body>

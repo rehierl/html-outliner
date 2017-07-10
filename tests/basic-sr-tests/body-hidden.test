@@ -1,7 +1,11 @@
 
-Currently, hidden root nodes will trigger an error although the algorithm can
-handle these; the outliner would simply return a null value instead of an outline
-instance.
+In the future, the outliner will be able to handle hidden root nodes by simply
+returning a null value as the resulting outline object.
+
+For debugging purposes, hidden root nodes are not allowed. This is to verify
+that there are no other circumstances in which a null value would be returned.
+
+Note that the body element contains an implicit #text node.
 
 $test.$comment() ##########
 $test.$options()
@@ -22,5 +26,4 @@ $test.$comment() ##########
 $test.$html(body)
 
 <body hidden>
-  <h1>A</h1>
 </body>

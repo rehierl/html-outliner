@@ -1,4 +1,9 @@
 
+This test is to verify that the 2nd heading element will trigger the creation
+of a new implicit/implied section with the 2nd HCE as its heading.
+
+In this specific case, the new implied section must be added to body's outline.
+
 $test.$comment() ##########
 $test.$options()
 
