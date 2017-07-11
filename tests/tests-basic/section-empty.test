@@ -1,8 +1,9 @@
 
-The difference to "body-dialog-1.test" is the "ignoreInnerSR=true" setting.
+This basic test is to check the behavior when entering and exiting an SC
+element. Note that the body element contains an implicit #text node.
 
 $test.$comment() ##########
-$test.$options()
+$test.$options(section)
 
 {
   "selector": "",
@@ -12,19 +13,14 @@ $test.$options()
   "rxSR": "^(blockquote|body|details|dialog|fieldset|figure|td)$",
   "rxSC": "^(article|aside|nav|section)$",
   "rxHC": "^(h[1-6])$",
-  "ignoreInnerSR": true,
+  "ignoreInnerSR": false,
   "allowDomEdits": false
 }
 
 $test.$comment() ##########
-$test.$html(body)
+$test.$html(section)
 
 <body>
-  <h1>A</h1>
-
-  <dialog>
-    <h1>B</h1>
-  </dialog>
-
-  <h2>B</h2>
+  <section>
+  </section>
 </body>

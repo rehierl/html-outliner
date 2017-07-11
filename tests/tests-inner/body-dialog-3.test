@@ -1,6 +1,9 @@
 
+This test is to verify that h2-B will become the heading of the body's first
+implicit section as an inner SR won't end it.
+
 $test.$comment() ##########
-$test.$options(section)
+$test.$options()
 
 {
   "selector": "",
@@ -15,9 +18,12 @@ $test.$options(section)
 }
 
 $test.$comment() ##########
-$test.$html(section)
+$test.$html(body)
 
 <body>
-  <section>
-  </section>
+  <dialog>
+    <h1>A</h1>
+  </dialog>
+
+  <h2>B</h2>
 </body>

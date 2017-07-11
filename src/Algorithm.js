@@ -541,6 +541,7 @@ onSRE_enter() {
     this._stack.push(new CContext(
       this._node, this._state, this._outline, this._section));
     this._state = STATE_IGNORE;
+    
     return;//- leave, we are done here
   }
   
@@ -560,7 +561,7 @@ onSRE_enter() {
   }
   
   else {//- if(this._state !== STATE_START) {
-    //- this SR is an inner SR to some other SR/SC
+    //- this SR is an inner SR of some other SE
     
     if(this._options.verifyInvariants) {
       assert((this._node !== this._startingNode), err.INVARIANT);
@@ -570,8 +571,9 @@ onSRE_enter() {
     }
 
     if(this._section.hasNoHeading) {
-      //- this section (in front of this SR) does not yet have a heading;
-      //  it does not end with the beginning of this inner SR
+      //- this section (in front of this SR) does not yet have a heading
+      //- it *does not end* with the beginning of this inner SR
+      //- it extends beyond this inner SR
       //
       //example: hX, dialog, ..., /dialog, p
       //- 'p' must be associated with 'hX's section
@@ -612,15 +614,34 @@ onSRE_enter() {
 //- void onSRE_exit(CNodeProxy node)
 
 onSRE_exit() {
+  //- get/retrieve the surrounding context
+  let context = this._stack.pop();
+  
+  //- this SR is an ignored inner SR
+  
+  if(this._state === STATE_IGNORE) {
+    //- no inner section, so this must be first - see hasNoHeading
+    
+    if(this._options.verifyInvariants) {
+      assert((context.node === this._node), err.INVARIANT);
+      //- context.state can't be STATE_START, STATE_IGNORE
+      //- context.state could be STATE_SR, STATE_SC, STATE_HC
+      assert((context.outline === this._outline), err.INVARIANT);
+      assert((context.section === this._section), err.INVARIANT);
+    }
+    
+    this._state = context.state;
+    return;//- leave, ignore this inner SR
+  }
+  
+  //- this SR was processed
+  
   if(this._section.hasNoHeading) {
     //- the current/last section (inside this SR) does not have
     //  a heading element; it ends with this SR
     this._section.createAndSetImpliedHeading();
   }
 
-  //- get/retrieve the surrounding context
-  let context = this._stack.pop();
-  
   //- this SR is a top-level SR
   
   if(context.state === STATE_START) {
@@ -638,21 +659,7 @@ onSRE_exit() {
     return;//- leave, the walk is over
   }
 
-  //- this SR is an ignored inner SR
-  
-  if(this._state === STATE_IGNORE) {
-    if(this._options.verifyInvariants) {
-      assert((context.node === this._node), err.INVARIANT);
-      //- context.state can't be STATE_START, STATE_IGNORE
-      //- context.state could be STATE_SR, STATE_SC, STATE_HC
-      assert((context.outline === this._outline), err.INVARIANT);
-      assert((context.section === this._section), err.INVARIANT);
-    }
-    this._state = context.state;
-    return;//- leave, ignore this inner SR
-  }
-  
-  //- this SR is a processed inner SR
+  //- this SR is an inner SR
   
   if(this._options.verifyInvariants) {
     assert((context.node === this._node), err.INVARIANT);
