@@ -51,6 +51,7 @@ constructor(options, node, parentNode) {
 
   //- bool isDomNode { get; }
   //- String nodeName { get; }
+  //- String textContent { get; }
   //- CNodeProxy parentNode { get; }
   //- CNodeProxy firstChild { get; }
   //- CNodeProxy nextSibling { get; }
@@ -162,19 +163,24 @@ get isDomNode() {
       let result = undefined;
       assert(isObjectInstance(this._node));//- not even an object
       
+      //- nodes must have a nodeType property
       result = this._node.nodeType;
       assert(typeof result === "number");//- not a node
       assert((result % 1) === 0);//- not a node
       
+      //- nodes must have a nodeName property
       result = this._node.nodeName;//- same as .tagName
       assert(typeof result === "string");//- not a node
 
+      //- nodes must have a firstChild property
       result = this._node.firstChild;
       assert((result === null) || isObjectInstance(result));//- not a node
 
+      //- nodes must have a nextSibling property
       result = this._node.nextSibling;
       assert((result === null) || isObjectInstance(result));//- not a node
       
+      //- nodes must have a textContent property
       result = this._node.textContent;
       assert((result === null) || (typeof result === "string"));//- not a node
 
@@ -250,8 +256,7 @@ get nodeName() {
 
 get textContent() {
   let textContent = this._node.textContent;
-  textContent = (textContent !== null) ? textContent.trim() : "";
-  return textContent;
+  return (textContent !== null) ? textContent : "";
 }
 
 //========//========//========//========//========//========//========//========
@@ -263,15 +268,19 @@ get isElement() {
       assert(this.isDomNode === true);//- not even a dom node
       let result = undefined;
       
+      //- the nodeType property of elements must have the value ELEMENT_NODE(1)
       result = this._node.nodeType;
       assert(result === ELEMENT_NODE);//- not an element
       
-      result = this._node.hasAttribute("hidden");
-      assert(typeof result === "boolean");//- not an element
-      
+      //- only elements have a tagName property
       result = this._node.tagName;//- same as .nodeName
       assert(typeof result === "string");//- not an element
       
+      //- only elements have a hasAttribute() function
+      result = this._node.hasAttribute("hidden");
+      assert(typeof result === "boolean");//- not an element
+      
+      //- only elements have a querySelector() function
       result = this._node.querySelector;
       assert(typeof result === "function");//- not an element
       

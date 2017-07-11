@@ -195,8 +195,8 @@ onCmdOptions(name, text, arg0) {
   
   arg0 = arg0.trim();
   
-  assert((arg0 !== ""), format(
-    "script [%s]: $options() command don't support any arguments",
+  assert((arg0 === ""), format(
+    "script [%s]: $options() command doesn't support any arguments",
     this._absPath
   ));
   

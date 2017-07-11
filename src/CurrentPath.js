@@ -28,7 +28,12 @@ constructor() {
 
 //private:
 
-  //- Array _path
+  //- String nodeToString(CNodeProxy node)
+  //- String textContentOf(CNodeProxy node)
+
+//private:
+
+  //- CNodeProxy[] _path
   //- the internal buffer
   this._path = [];
 
@@ -91,19 +96,47 @@ get currentPath() {
     
     for(let ix=0, ic=this._path.length; ix<ic; ix++) {
       let node = this._path[ix];
-      let part = node.nodeName;
-      
-      if(node.isHC) {
-        part = format("%s:%s", part, node.textContent);
-      }
-      
-      path.push(part);
+      let text = this.nodeToString(node);
+      path.push(text);
     }
     
     path = path.join(" / ");
     this._currentPath = path;
   }
   return this._currentPath;
+}
+
+//========//========//========//========//========//========//========//========
+//- String nodeToString(CNodeProxy node)
+
+nodeToString(node) {
+  let text = node.nodeName;
+  
+  if(text === "#text") {
+    return format("%s(%s)", text, this.textContentOf(node));
+  }
+  
+  if(node.isHC) {
+    return format("%s(%s)", text, this.textContentOf(node));
+  }
+  
+  return text;
+}
+
+//========//========//========//========//========//========//========//========
+//- String textContentOf(CNodeProxy node)
+
+textContentOf(node) {
+  const TextLenMax = 16;
+  
+  let text = node.textContent;
+  text = text.trim();
+  
+  if(text.length > TextLenMax) {
+    text = format("%s...", text.substring(0, TextLenMax));
+  }
+  
+  return text;
 }
 
 //========//========//========//========//========//========//========//========

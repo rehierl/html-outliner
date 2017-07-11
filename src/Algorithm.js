@@ -582,7 +582,7 @@ onSRE_enter() {
       //
       //example: hX, dialog, ..., /dialog, p
       //- 'p' must be associated with 'hX's section
-      //- 'dialog' does not end 'hX's section
+      //- 'dialog' must not end 'hX's section
       //
       //example: body, dialog, ..., /dialog, hX, /body
       //- 'dialog' cannot determine if 'body' has a heading or not
@@ -679,7 +679,8 @@ onSRE_exit() {
   //  are, up to this point, completely separate from each other
   this._state = context.state;
   this._outline = context.outline;
-  //- continue the section (in front of this SR)
+  
+  //- continue the section that started in front of this SR
   this._section = context.section;
 }
 
@@ -709,7 +710,6 @@ onSCE_enter() {
   
   else {//- if(this._state !== STATE_START) {
     //- this SC is child of some other SE
-    assert(false, "TEST THIS");
     
     if(this._options.verifyInvariants) {
       assert((this._node !== this._startingNode), err.INVARIANT);
@@ -809,27 +809,28 @@ onSCE_exit() {
   //  are, up to this point, completely separate from each other
   //- context.section has ended with the beginning of this SC
 
+  //the current implementation is following the outliner steps (Version-1)
   //- pseudocode-27: currentOutline = stack.pop()
   //- pseudocode-28: currentSection = currentOutline.lastSection
   //- pseudocode-29: currentSection.appendOutline(node.innerOutline);
   
-  assert(false, "TEST THIS");
-  //----------------- why add to lastSection and not to the outline itself ?!?
-  this._section = context.outline.lastSection;
-  let sections = this._outline.sections;
+  let lastSection = context.outline.lastSection;
+  let innerSections = this._outline.sections;
 
-  for(let ix=0, ic=sections.length; ix<ic; ix++) {
-    let section = sections[ix];
+  for(let ix=0, ic=innerSections.length; ix<ic; ix++) {
+    let section = innerSections[ix];
     //- currentSection.lastSubSection -> section
     //- section.parentSection -> currentSection
-    this._section.addSubSection(section);
+    lastSection.addSubSection(section);
   }
 
   //- restore the surrounding context
   this._state = context.state;
   this._outline = context.outline;
+  
   //- context.section is no longer relevant
-  //this._section = context.section;
+  //- context.section is not necessarily the same as lastSection!
+  this._section = lastSection;
 }
 
 //========//========//========//========//========//========//========//========
@@ -893,6 +894,7 @@ onHCE_enter() {
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
       this._state = STATE_HC;
+      
       return;//- leave, we are done here
     }
     
@@ -938,6 +940,7 @@ onHCE_enter() {
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
       this._state = STATE_HC;
+      
       return;//- leave, we are done here
     }
 
@@ -968,6 +971,7 @@ onHCE_enter() {
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
       this._state = STATE_HC;
+      
       return;//- leave, we are done here
     }
     

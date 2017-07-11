@@ -21,6 +21,6 @@ $test.$comment() ##########
 $test.$html(section)
 
 <body>
-  <section>
+  <section hidden>
   </section>
 </body>

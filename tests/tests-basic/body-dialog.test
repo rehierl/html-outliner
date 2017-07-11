@@ -3,7 +3,7 @@ This test is to verify the basic behavior when using an inner SR element as
 starting node.
 
 $test.$comment() ##########
-$test.$options(section)
+$test.$options()
 
 {
   "selector": "",

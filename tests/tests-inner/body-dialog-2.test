@@ -1,8 +1,8 @@
 
 In contrary to "body-dialog-1.test", the child nodes of the inner dialog SR
-will not even be processed.
+will not be processed at all.
 
-Note the following settings:
+Note the following two settings:
 - "ignoreInnerSR": true
 - "usePerformanceShortcuts": true/false (optional)
 
