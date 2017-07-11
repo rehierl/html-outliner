@@ -53,8 +53,10 @@ constructor() {
   //  elements and all of their child nodes/elements as being visible
   this._ignoreHiddenAttributes = false;
   
-  //- set to ignore all inner sectioning root (SR) elements
+  //- set to ignore inner sectioning root (SR) elements
   //- false = also create outlines for these inner SRs
+  //- the term "inner" is relative to the starting node. the starting node will
+  //  be processed even if itself is an inner SR.
   this._ignoreInnerSR = false;
   
   //- a regular expression used to classify an element

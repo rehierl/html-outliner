@@ -193,7 +193,7 @@ createOutline(root, optionsArg) {
     assert((this._node === null), err.INVARIANT);
     assert((this._state === STATE_START), err.INVARIANT);
     //- in the future, this._outine may be null for hidden root nodes
-    assert((this._outline !== null), err.INVARIANT);//- result
+    //assert((this._outline !== null), err.INVARIANT);//- result
     assert((this._section === null), err.INVARIANT);
     assert(this._stack.isEmpty, err.INVARIANT);
     assert(this._path.isEmpty, err.INVARIANT);
@@ -240,15 +240,20 @@ validateDomNode(root) {
   if(this._options.selector !== "") {
     //- body.querySelector("body") will return null
     node = node.querySelector(this._options.selector);
+    
     assert((node !== null), err.INVALID_OPTIONS);
     assert(node.isElement, err.INVALID_OPTIONS);
+    
+    //- make sure the tree traversal won't leave the subtree
+    //  that is defined by this selected starting node.
+    node = new CNodeProxy(this._options, node.domNode, null);
   }
 
   //- root must be a sectioning root (SR) or a sectioning content (SC) element
   assert((node.isSR || node.isSC), err.INVALID_ROOT);
 
-  //- if the root is itself hidden, its outline will be a null value
-  assert((node.isHidden !== true), err.INVALID_ROOT);
+  //- if the starting node itself is hidden, its outline will be a null value
+  //assert((node.isHidden !== true), err.INVALID_ROOT);
   
   //- looks fine; use it
   this._startingNode = node;
@@ -687,7 +692,6 @@ onSRE_exit() {
 
 onSCE_enter() {
   if(this._state === STATE_START) {
-    assert(false, "TEST THIS");
     //- this SC is the root sectioning element
     
     if(this._options.verifyInvariants) {
@@ -697,13 +701,14 @@ onSCE_enter() {
       assert((this._section === null), err.INVARIANT);
     }
     
-    //- therefore, all SRs are optional inner SRs
+    //- therefore, all SRs (if any) are optional inner SRs
     //- inner SRs do not contribute to the outlines of their ancestors
+    //  and thus may be completely ignored
     this._ignoreNextSR = this._options.ignoreInnerSR;
   }
   
   else {//- if(this._state !== STATE_START) {
-    //- this SC is child of some other SR/SC
+    //- this SC is child of some other SE
     assert(false, "TEST THIS");
     
     if(this._options.verifyInvariants) {
@@ -728,7 +733,6 @@ onSCE_enter() {
     }
   }
 
-  assert(false, "TEST THIS");
   //- backup the surrounding context,
   //  even if it is the initial/starting context
   this._stack.push(new CContext(
@@ -753,20 +757,20 @@ onSCE_enter() {
 //- void onSCE_exit(CNodeProxy node)
 
 onSCE_exit() {
+  //- get/retrieve the surrounding context
+  let context = this._stack.pop();
+  
+  //- this SCE was processed
+  
   if(this._section.hasNoHeading) {
-    assert(false, "TEST THIS");
     //- the current/last section (inside this SC) does not have
     //  a heading element; it ends with this SC
     this._section.createAndSetImpliedHeading();
   }
 
-  //- get/retrieve the surrounding context
-  let context = this._stack.pop();
-  
   //- this SC is a top-level SC
   
   if(context.state === STATE_START) {
-    assert(false, "TEST THIS");
     if(this._options.verifyInvariants) {
       assert((context.node === this._node), err.INVARIANT);
       //assert((context.state === STATE_START), err.INVARIANT);
@@ -784,7 +788,6 @@ onSCE_exit() {
   //- this SC is an inner SC
   
   if(this._options.verifyInvariants) {
-    assert(false, "TEST THIS");
     assert((context.node === this._node), err.INVARIANT);
     //- context.state can't be STATE_START, STATE_IGNORE
     //- context.state could be STATE_SR, STATE_SC, STATE_HC

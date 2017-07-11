@@ -1,11 +1,13 @@
 
-In the future, the outliner will be able to handle hidden root nodes by simply
-returning a null value as the resulting outline object.
+This test is to verify the basic behavior when using a hidden body element as
+starting node.
 
-For debugging purposes, hidden root nodes are not allowed. This is to verify
-that there are no other circumstances in which a null value would be returned.
+In the future, the outliner will be able to handle hidden starting nodes by
+simply returning a null value as the resulting outline object.
 
-Note that the body element contains an implicit #text node.
+For debugging purposes, hidden root nodes are not allowed; i.e. these will cause
+an error. This is to verify that there are no other circumstances in which a
+null value will be returned.
 
 $test.$comment() ##########
 $test.$options()

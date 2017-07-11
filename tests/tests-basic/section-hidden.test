@@ -1,8 +1,6 @@
 
-This test is to verify the basic behavior when using a body element as
-starting node.
-
-Note - This body element contains no implicit #text node.
+This test is to verify the basic behavior when entering and exiting an inner
+hidden root SC element.
 
 $test.$comment() ##########
 $test.$options()
@@ -20,6 +18,9 @@ $test.$options()
 }
 
 $test.$comment() ##########
-$test.$html(body)
+$test.$html(section)
 
-<body></body>
+<body>
+  <section>
+  </section>
+</body>

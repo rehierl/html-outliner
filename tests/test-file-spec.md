@@ -13,7 +13,7 @@ $params = $param (";" $param)*
 $param = a parameter as defined by $commandName
 ```
 
-* Any whitespace at the beginning or at the end of $text will automatically be
+* Any whitespace at the beginning or at the end of $text will be automatically
   removed; i.e. all $text content will be trimmed.
 * Any $text that preceeds the very first $command will be ignored and can
   therefore be used for documentation.
@@ -21,10 +21,10 @@ $param = a parameter as defined by $commandName
   stretch over multiple lines.
 * Each $param represents a parameter required by its $commandName. Its value
   must not contain a semicolon (;) character. Currently, no escaping is supported.
-* Any $text that follows a $command can be considered as an implicit additional
+* Any $text that follows a $command can be considered as an additional implicit
   parameter for its preceeding $command.
-* Commands that have an unknown $commandName will be ignored and can therefore
-  be used for additional documentation.
+* Commands that have an unknown $commandName will be ignored. Their implicit
+  $text argument can be used for additional documentation.
 
 ## $comment()
 
@@ -38,10 +38,20 @@ $param = a parameter as defined by $commandName
 * $comment and $ignore commands are in fact unknown commands and will be silently
   be ignored.
 
+## $options()
+
+```
+"$test.$options()" $text
+$text = a stringified object in JSON format
+```
+
+* $text must be a JSON string that can be parsed into an options object.
+  This object will be used as the outliner's options argument.
+* Each test script may contain at most one $test.$options() command.
+
 ## $html(selector)
 
 ```
-"$test.$html()" $text
 "$test.$html(" $selector ")" $text
 $text = any html content
 ```
@@ -53,20 +63,9 @@ $text = any html content
   expressions and must be valid with regards to these expressions.
   As a consequence, outlines will only be created for the first matching DOM node.
 * $text holds the HTML content for which to create the outline and can be any
-  HTML content. $text can be partial HTML fragments, or a fully specieifed HTML
+  HTML content. $text can be partial HTML fragments, or a fully specified HTML
   document.
-* Each script file must have exactly one $html() or $html($selector) command.
-
-## $options()
-
-```
-"$test.$options()" $text
-$text = a stringified object in JSON format
-```
-
-* $text must be a JSON string that can be parsed into an object. This object
-  will be used as the outliner's options argument.
-* Each test script may contain at most one $test.$options() command.
+* Each script file must have exactly one $html($selector) command.
 
 ## $outline()
 

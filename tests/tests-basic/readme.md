@@ -1,3 +1,3 @@
 
-A set of basic tests with sectioning elements that contain only heading elements,
-but no inner sectioning elements.
+A set of basic tests using starting nodes that contain only heading elements,
+but no further inner sectioning elements.

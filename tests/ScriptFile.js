@@ -29,6 +29,8 @@ constructor() {
 //private:
 
   //- void execCommands(String contents)
+  //- void commandsMap()
+  //- void onCmdOptions(String cmd, String text)
   //- void onCmdHtml(String cmd, String text, String selector)
   //- void onCmdOutline(String cmd, String text, String line) - TODO
   
@@ -98,24 +100,19 @@ execCommands(contents) {
   }
   
   assert((offsets.length > 0), format(
-    "script [%s]: contains no commands", this._absPath
+    "script [%s]: has no commands", this._absPath
   ));
   
   let ic = offsets.length;
   offsets.push(contents.length);
-  
-  let commandsMap = {
-    "html": "onCmdHtml",
-    "options": "onCmdOptions",
-    "outline": "onCmdOutline"
-  };
+  let commandsMap = this.commandsMap();
   
   for(let ix=0; ix<ic; ix++) {
     let command = contents.substring(offsets[ix], offsets[ix+1]);
     let match = rxCommand.exec(command);
     
     assert((match !== null), format(
-      "script [%s]: has invalid command syntax", this._absPath
+      "script [%s]: contains invalid command syntax", this._absPath
     ));
     
     //- "$test.$name() text" => name(name, text, "")
@@ -140,26 +137,74 @@ execCommands(contents) {
       params[ix] = params[ix].trim();
     }
     
-    //- select the command's handler function
-    name = commandsMap[name];
-    let fn = this[name];
+    //- select the command handler
+    let handler = null;
     
-    //- if this fails, update the commandsMap
-    assert((fn !== undefined), format(
-      "script [%s]: [%s] is an unknown command",
-      this._absPath, name
-    ));
+    {//- select and check the referenced function call
+      let entry = commandsMap[name];
+      let offset = entry.indexOf(":");
+      //- check the entries of commandsMap()
+      assert((offset > 0), "internal error");
+      
+      let argc = Number.parseInt(entry.substring(offset+1));
+
+      assert((params.length === argc), format(
+        "script [%s]: [%s] invalid number of arguments",
+        this._absPath, name
+      ));
+      
+      handler = this[entry.substring(0, offset)];
+
+      //- if this fails, update the commandsMap
+      assert((handler !== undefined), format(
+        "script [%s]: [%s] is an unknown command",
+        this._absPath, name
+      ));
+    }
     
-    //- execute: void name(name, text, p1, p2, ...)
-    fn.apply(this, params);
+    //- execute the command handler
+    handler.apply(this, params);
   }
 }
 
 //========//========//========//========//========//========//========//========
+//- void commandsMap()
 
-onCmdOptions(name, text) {
+//- return { (name: "function:argc")* }
+//- name - the command's name
+//- function - the name of the function that acts as a handler for "name"
+//- argc - the number of arguments supported by "function" (i.e. not by "name")
+//  - you will always have at least 3 arguments (name, text, arg0) - even if
+//  (text == "") and (arg0 == "")
+commandsMap() {
+  return {
+    "options": "onCmdOptions:3",
+    "html": "onCmdHtml:3",
+    "outline": "onCmdOutline:3"
+  };
+}
+
+//========//========//========//========//========//========//========//========
+//- void onCmdOptions(String cmd, String text)
+
+onCmdOptions(name, text, arg0) {
   assert((this._optionsArg === undefined), format(
-    "script [%s]: multiple $options() commands not supported", this._absPath
+    "script [%s]: multiple $options() commands not supported",
+    this._absPath
+  ));
+  
+  arg0 = arg0.trim();
+  
+  assert((arg0 !== ""), format(
+    "script [%s]: $options() command don't support any arguments",
+    this._absPath
+  ));
+  
+  text = text.trim();
+  
+  assert((text !== ""), format(
+    "script [%s]: an $options() command must have an options object",
+    this._absPath
   ));
   
   let options = undefined;
@@ -170,20 +215,22 @@ onCmdOptions(name, text) {
     options = JSON.parse(text);
   } catch(error) {
     let outer = new Error(format(
-      "script [%s]: failed to parse the $options() command", this._absPath));
+      "script [%s]: failed to parse the $options() command",
+      this._absPath));
     outer.inner = error;
     throw outer;
   }
   
   assert(((typeof options) === "object"), format(
-    "script [%s]: the $options() command must define an object", this._absPath
+    "script [%s]: the $options() command must define an object",
+    this._absPath
   ));
   
-  //- could still be 
   let result = Object.prototype.toString.call(options);
   
   assert((result === "[object Object]"), format(
-    "script [%s]: the $options() command must define an object", this._absPath
+    "script [%s]: the $options() command must define an object",
+    this._absPath
   ));
   
   this._optionsArg = options;
@@ -194,11 +241,26 @@ onCmdOptions(name, text) {
 
 onCmdHtml(name, text, selector) {
   assert((this._htmlContent === undefined), format(
-    "script [%s]: multiple $html() commands not supported", this._absPath
+    "script [%s]: multiple $html() commands not supported",
+    this._absPath
+  ));
+  
+  text = text.trim();
+  
+  assert((text !== ""), format(
+    "script [%s]: an $html() command must have html content",
+    this._absPath
+  ));
+  
+  selector = selector.trim();
+  
+  assert((text !== ""), format(
+    "script [%s]: an $html() command must have a non-empty selector",
+    this._absPath
   ));
   
   this._htmlContent = text;
-  this._htmlSelector = (selector !== "") ? selector : "body";
+  this._htmlSelector = selector;
 }
 
 //========//========//========//========//========//========//========//========

@@ -1,9 +1,9 @@
 
-This basic test is to check the behavior when entering and exiting an SC
-element. Note that the body element contains an implicit #text node.
+This test is to verify the basic behavior when entering and exiting an inner
+root SC element.
 
 $test.$comment() ##########
-$test.$options(section)
+$test.$options()
 
 {
   "selector": "",

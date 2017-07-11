@@ -79,7 +79,8 @@ constructor(options, node, parentNode) {
   this._node = node;
   
   //- CNodeProxy _parentNode
-  //- null, or _node's wrapped up parent node
+  //- null, or the _node's wrapped up parent node
+  //- this node represents the starting node, if _parentNode is null
   this._parentNode = parentNode;
 
   //- CNodeProxy _firstChild
@@ -218,6 +219,12 @@ get nextSibling() {
     let sibling = this._node.nextSibling;
     
     if(isObjectInstance(sibling) !== true) {
+      this._nextSibling = null;
+    } else if(this._parentNode === null) {
+      //- when using an inner node as starting node, returning
+      //  a non-null value would make the tree traversal leave the
+      //  subtree defined by the starting node.
+      //- we are at the starting node, if _parentNode is null
       this._nextSibling = null;
     } else {
       this._nextSibling = new CNodeProxy(
