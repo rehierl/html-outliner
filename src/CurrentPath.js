@@ -24,7 +24,6 @@ constructor() {
   //- bool isEmpty { get; }
   
   //- String currentPath { get; }
-  //- void toString()
 
 //private:
 
@@ -137,13 +136,6 @@ textContentOf(node) {
   }
   
   return text;
-}
-
-//========//========//========//========//========//========//========//========
-//- void toString()
-
-toString() {
-  return this._currentPath;
 }
 
 //========//========//========//========//========//========//========//========

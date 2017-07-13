@@ -41,6 +41,6 @@ function isObjectInstance(value) {
   if(str === "[object Function]") return false;
   //- toString({}) = "[object Object]"
   
-  //- hope that it really is what it is supposed to be ...
+  //- hope that this really is what it is supposed to be ...
   return true;
 }

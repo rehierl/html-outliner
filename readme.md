@@ -29,19 +29,25 @@ algorithm by implementing it using JavaScript and Node.js.
 
 ## Related Links
 
-This implementation is based upon:
+W3C, HTML 5.2, Editor's Draft, 2017-07-06
 
+* [W3C, HTML Editor's Draft repository](https://github.com/w3c/html)
 * [W3C, HTML 5.2, Editor's Draft, 2017-05-03](https://w3c.github.io/html/)
 * [4.3.9. Headings and sections](https://w3c.github.io/html/sections.html#headings-and-sections)
 * [4.3.9.1. Creating an outline](https://w3c.github.io/html/sections.html#creating-an-outline)
 
-which matched:
+W3C, HTML 5.2, Working Draft, 2017-05-09
 
 * [W3C, HTML 5.2, Working Draft, 2017-05-09](https://www.w3.org/TR/html52/)
 * [4.3.9. Headings and sections](https://www.w3.org/TR/html52/sections.html#headings-and-sections)
 * [4.3.9.1. Creating an outline](https://www.w3.org/TR/html52/sections.html#creating-an-outline)
 
-see also:
+W3C, DOM 4.1, Editor's Draft, 2017-07-05
+
+* [W3C, DOM Editor's Draft repository](https://github.com/w3c/dom)
+* [W3C, DOM 4.1, Editor's Draft, 2017-07-05](https://w3c.github.io/dom/)
+
+See also:
 
 * [rehierl / html-outliner-spec](https://github.com/rehierl/html-outliner-spec)
   for further details and notes related to the outline algorithm.

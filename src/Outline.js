@@ -40,7 +40,7 @@ constructor(options, node) {
 //private:
 
   //- COptions options
-  //- the options to use during the current run
+  //- the options to use during the next run
   this._options = options;
   
   //- CNodeProxy _outlineOwner
@@ -71,7 +71,7 @@ get outlineOwner() {
 //========//========//========//========//========//========//========//========
 //- bool isImplicitOutline { get; }
 
-//- TODO - meant to help create an outline hierarchy
+//- TODO - intended to help create an outline hierarchy
 //- distinguish from outlines of inner SRs
 get isImplicitOutline() {
   return this._outlineOwner.isSC;

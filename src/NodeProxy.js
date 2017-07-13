@@ -71,7 +71,7 @@ constructor(options, node, parentNode) {
 //private:
 
   //- COptions options
-  //- the options to use during the current run
+  //- the options to use during the next run
   this._options = options;
   
   //- DomNode _node
@@ -315,6 +315,7 @@ get tagName() {
 }
 
 //========//========//========//========//========//========//========//========
+//- CNodeProxy querySelector(String selector)
 
 querySelector(selector) {
   let node = null;
@@ -375,6 +376,7 @@ get rank() {
     assert(this.isHC, err.DEVEL);
     
     let nodeName = this.nodeName;
+    //- essentially defaults to highest rank!
     let rank = -1;
     
     if(rxHR.test(nodeName)) {

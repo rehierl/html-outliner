@@ -66,7 +66,7 @@ constructor(options, node, heading) {
 //private:
 
   //- COptions options
-  //- the options to use during the current run
+  //- the options to use during the next run
   this._options = options;
   
   //- CNodeProxy _startingNode

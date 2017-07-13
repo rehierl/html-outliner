@@ -76,10 +76,11 @@ constructor() {
   //- void reset()
 
   //- void onEnter()
-  //- void onXXX_enter()
-  
   //- void onExit()
+
+  //- void onXXX_enter()
   //- void onXXX_exit()
+  //- XXX = Context, NonElement, HiddenElement, SRE, SCE, HCE, OtherElement
 
 //private:
 
@@ -124,7 +125,7 @@ constructor() {
   //- CCurrentPath _path
   //- a breadcrumb path for debugging purposes only
   //- used to maintain a path to the current node
-  //- see COptions.maintainPath
+  //- see COptions.maintainPath, this.traverseInTreeOrder()
   this._path = new CCurrentPath();
 }
 
@@ -155,8 +156,7 @@ reset() {
  * -- The outliner begins with the default options, overrides these using the
  * supplied options argument object and uses the resulting configuration.
  * -- If optionsArg is missing, the previous options will be used. If the outliner
- * runs for the first time, the previous options will match the default
- * configuration.
+ * runs for the first time, the default options will be used.
  * -- Use an empty object (i.e. {}) to reset the outliner to the default options.
  * @returns {Outline}
  * -- the resulting outline object.
@@ -164,7 +164,7 @@ reset() {
 createOutline(root, optionsArg) {
   if(arguments.length === 1) {
     //- use previous or default options if only one argument is provided?
-    //- comment to use previous options, uncomment to use default options
+    //- comment to use the previous options, uncomment to use the default options
     //this._options = new COptions();
     this.validateDomNode(root);
   } else if(arguments.length === 2) {
