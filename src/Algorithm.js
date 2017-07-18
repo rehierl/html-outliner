@@ -14,8 +14,8 @@ const CCurrentPath = require("./CurrentPath.js");
 const CContext = require("./Context.js");
 const CStack = require("./Stack.js");
 const CNodeProxy = require("./NodeProxy.js");
-const CSection = require("./Section.js");
-const COutline = require("./Outline.js");
+const CSectionBuilder = require("./SectionBuilder.js");
+const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
 //- identifiers for the states of this outliner automaton
@@ -50,7 +50,7 @@ const STATE_HC     = "hc";    //- for heading content (HC) elements
 //  an implied heading allows to prevent associating h1-A with SCE's inner
 //  last section - which is also SCE's only section
 //- depending on how exactly inner SCE's are merged into their first outer SE,
-//  the construct of implied headings mit not even be absolutely necessary
+//  the construct of implied headings might not even be absolutely necessary
 
 //TODOs:
 //- in general a better error handling; use exceptions instead of asserts
@@ -64,8 +64,8 @@ constructor() {
   
 //public:
 
-  //- COutline createOutline(DomNode root, Object optionsArg) throws AssertionError
-  //- COutline createOutline(DomNode root) throws AssertionError
+  //- COutlineBuilder createOutline(DomNode root) throws AssertionError
+  //- COutlineBuilder createOutline(DomNode root, Object optionsArg) throws AssertionError
   
 //private:
 
@@ -109,11 +109,11 @@ constructor() {
     //- the current state identifier
     this._state = STATE_START;
 
-    //- COutline _outline
+    //- COutlineBuilder _outline
     //- a reference to the current outline
     this._outline = null;
 
-    //- CSection _section
+    //- CSectionBuilder _section
     //- a reference to the current section
     this._section = null;
   }//- current context
@@ -145,8 +145,8 @@ reset() {
 }
 
 //========//========//========//========//========//========//========//========
-//- COutline createOutline(DomNode root, Object optionsArg)
-//- COutline createOutline(DomNode root)
+//- COutlineBuilder createOutline(DomNode root)
+//- COutlineBuilder createOutline(DomNode root, Object optionsArg)
 
 /*
  * @param {DomNode} root
@@ -602,13 +602,13 @@ onSRE_enter() {
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
   //- TODO - implement an outline hierarchy?
-  this._outline = new COutline(this._options, this._node);
+  this._outline = new COutlineBuilder(this._options, this._node);
 
   //- section.startingNode -> node
   //- does not set node.parentSection
   //- TODO - to which section does a SR belong?
   //  to the section it starts, or to the next outer section?
-  this._section = new CSection(this._options, this._node, null);
+  this._section = new CSectionBuilder(this._options, this._node, null);
 
   //- outline.lastSection -> section
   //- section.parentOutline -> outline
@@ -742,11 +742,11 @@ onSCE_enter() {
   //- outline.outlineOwner -> node
   //- node.innerOutline -> outline
   //- TODO - implement an outline hierarchy?
-  this._outline = new COutline(this._options, this._node);
+  this._outline = new COutlineBuilder(this._options, this._node);
 
   //- section.startingNode -> node
   //- does not set node.parentSection
-  this._section = new CSection(this._options, this._node, null);
+  this._section = new CSectionBuilder(this._options, this._node, null);
 
   //- outline.lastSection -> section
   //- section.parentOutline -> outline
@@ -887,7 +887,7 @@ onHCE_enter() {
     //- if we already know, that we'll have to add the new section
     //  to the current outline, then there is no need to go up the hierarchy
     if(this._node.rank >= lastSection.heading.rank) {
-      let section = new CSection(this._options, this._node, this._node);
+      let section = new CSectionBuilder(this._options, this._node, this._node);
       this._outline.addSection(section);
       this._section = section;
       
@@ -933,7 +933,7 @@ onHCE_enter() {
       //- enter h2-C; loop once; add subsection to h1-A
       //- i.e. siblings don't necessarily have the same rank!
       
-      let section = new CSection(this._options, this._node, this._node);
+      let section = new CSectionBuilder(this._options, this._node, this._node);
       parentSection.addSubSection(section);
       this._section = section;
       
@@ -964,7 +964,7 @@ onHCE_enter() {
       //example: body; h2-A; h1-B /body
       //- enter h1-B; add a new section to the current outline
       
-      let section = new CSection(this._options, this._node, this._node);
+      let section = new CSectionBuilder(this._options, this._node, this._node);
       this._outline.addSection(section);
       this._section = section;
       
@@ -1034,6 +1034,6 @@ const CCurrentPath = require("./CurrentPath.js");
 const CContext = require("./Context.js");
 const CStack = require("./Stack.js");
 const CNodeProxy = require("./NodeProxy.js");
-const CSection = require("./Section.js");
-const COutline = require("./Outline.js");
+const CSectionBuilder = require("./SectionBuilder.js");
+const COutlineBuilder = require("./OutlineBuilder.js");
 //*/

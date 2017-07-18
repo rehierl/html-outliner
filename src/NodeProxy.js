@@ -10,8 +10,8 @@ const isObjectInstance = require("./isObjectInstance.js");
 /* must appear below module.exports (cyclic require statements)
 //- TODO - this could change with ES6 modules
 const COptions = require("./Options.js");
-const CSection = require("./Section.js");
-const COutline = require("./Outline.js");
+const CSectionBuilder = require("./SectionBuilder.js");
+const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
 //========//========//========//========//========//========//========//========
@@ -65,8 +65,8 @@ constructor(options, node, parentNode) {
   //- bool isHC { get; }
   //- int rank { get; }
 
-  //- CSection parentSection { get; set; }
-  //- COutline innerOutline { get; set; }
+  //- CSectionBuilder parentSection { get; set; }
+  //- COutlineBuilder innerOutline { get; set; }
 
 //private:
 
@@ -92,14 +92,14 @@ constructor(options, node, parentNode) {
   //- null, or _node's wrapped up next sibling node
   this._nextSibling = undefined;
   
-  //- CSection _parentSection
+  //- CSectionBuilder _parentSection
   //- the section to which this node belongs
   //  i.e. the section with which this node is associated
   //- when done, this should be non-null for all nodes
   //- except for the root node ???
   this._parentSection = null;
   
-  //- COutline _innerOutline
+  //- COutlineBuilder _innerOutline
   //- null, or the inner outline of a SR or SC element
   this._innerOutline = null;
 
@@ -390,14 +390,14 @@ get rank() {
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection parentSection { get; set; }
+//- CSectionBuilder parentSection { get; set; }
 
 get parentSection() {
   return this._parentSection;
 }
 
 set parentSection(parentSection) {
-  assert((parentSection instanceof CSection), err.DEVEL);
+  assert((parentSection instanceof CSectionBuilder), err.DEVEL);
   
   if(this._parentSection !== null) {
     //- i.e. do not re-associate
@@ -408,14 +408,14 @@ set parentSection(parentSection) {
 }
 
 //========//========//========//========//========//========//========//========
-//- COutline innerOutline { get; set; }
+//- COutlineBuilder innerOutline { get; set; }
 
 get innerOutline() {
   return this._innerOutline;
 }
 
 set innerOutline(innerOutline) {
-  assert((innerOutline instanceof COutline), err.DEVEL);
+  assert((innerOutline instanceof COutlineBuilder), err.DEVEL);
   
   if(this._innerOutline !== null) {
     //- i.e. do not re-associate
@@ -430,6 +430,6 @@ set innerOutline(innerOutline) {
 
 //* must appear below module.exports (cyclic require statements)
 const COptions = require("./Options.js");
-const CSection = require("./Section.js");
-const COutline = require("./Outline.js");
+const CSectionBuilder = require("./SectionBuilder.js");
+const COutlineBuilder = require("./OutlineBuilder.js");
 //*/

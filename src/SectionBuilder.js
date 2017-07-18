@@ -10,7 +10,7 @@ const err = require("./errorMessages.js");
 //- TODO - this could change with ES6 modules
 const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
-const COutline = require("./Outline.js");
+const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
 //- this constant is used to represent implied headings
@@ -20,11 +20,11 @@ const COutline = require("./Outline.js");
 //  i.e. it won't be passed on as a result/return value
 const IMPLIED_HEADING = "implied-heading";
 
-module.exports = class CSection {
+module.exports = class CSectionBuilder {
 //========//========//========//========//========//========//========//========
-//- new CSection(CNodeProxy startingNode, CNodeProxy heading, COptions options)
-//- new CSection(node, null, options) - start a new section with an unknown heading
-//- new CSection(node, heading, options) - start a new section with a known heading
+//- new CSectionBuilder(CNodeProxy startingNode, CNodeProxy heading, COptions options)
+//- new CSectionBuilder(node, null, options) - start a new section with an unknown heading
+//- new CSectionBuilder(node, heading, options) - start a new section with a known heading
 
 constructor(options, node, heading) {
   assert((arguments.length === 3), err.DEVEL);
@@ -48,7 +48,7 @@ constructor(options, node, heading) {
   //- bool isExplicitSection { get; }
   //- bool isImplicitSection { get; }
 
-  //- COutline parentOutline { get; set; }
+  //- COutlineBuilder parentOutline { get; set; }
   
   //- bool hasNoHeading { get; }
   //- void createAndSetImpliedHeading()
@@ -56,12 +56,12 @@ constructor(options, node, heading) {
   //- bool hasHeading { get; }
   //- CNodeProxy heading { get; set; }
 
-  //- bool isAncestorOf(CSection subsection)
-  //- void addSubSection(CSection section)
+  //- bool isAncestorOf(CSectionBuilder subsection)
+  //- void addSubSection(CSectionBuilder section)
   //- bool hasParentSection { get; }
-  //- CSection parentSection { get; set; }
-  //- CSection lastSubSection { get; }
-  //- CSection[] subsections { get; }
+  //- CSectionBuilder parentSection { get; set; }
+  //- CSectionBuilder lastSubSection { get; }
+  //- CSectionBuilder[] subsections { get; }
 
 //private:
 
@@ -74,7 +74,7 @@ constructor(options, node, heading) {
   //- a SR, a SC or a heading element
   this._startingNode = node;
   
-  //- COutline _parentOutline
+  //- COutlineBuilder _parentOutline
   //- the outline to which this section belongs
   this._parentOutline = null;
   
@@ -84,11 +84,11 @@ constructor(options, node, heading) {
   //  i.e. either IMPLIED_HEADING, or a CNodeProxy heading
   this._heading = heading;
   
-  //- CSection[] _subsections
+  //- CSectionBuilder[] _subsections
   //- any number of possibly further nested subsections
   this._subsections = [];
   
-  //- CSection _parentSection
+  //- CSectionBuilder _parentSection
   //- the section to which this section is a subsection
   //- (_subsections[ix]._parentSection === this)
   this._parentSection = null;
@@ -123,14 +123,14 @@ get isImplicitSection() {
 }
 
 //========//========//========//========//========//========//========//========
-//- COutline parentOutline { get; set; }
+//- COutlineBuilder parentOutline { get; set; }
 
 get parentOutline() {
   return this._parentOutline;
 }
 
 set parentOutline(parentOutline) {
-  assert((parentOutline instanceof COutline), err.DEVEL);
+  assert((parentOutline instanceof COutlineBuilder), err.DEVEL);
   
   if(this._parentOutline !== null) {//- do not re-associate
     assert((parentOutline === this._parentOutline), err.INVARIANT);
@@ -199,11 +199,11 @@ set heading(heading) {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool isAncestorOf(CSection subsection)
+//- bool isAncestorOf(CSectionBuilder subsection)
 
 isAncestorOf(subsection) {
   assert((arguments.length === 1), err.DEVEL);
-  assert((subsection instanceof CSection), err.DEVEL);
+  assert((subsection instanceof CSectionBuilder), err.DEVEL);
   let parent = subsection._parentSection;
   
   while(parent !== null) {
@@ -222,14 +222,14 @@ get hasParentSection() {
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection parentSection { get; set; }
+//- CSectionBuilder parentSection { get; set; }
 
 get parentSection() {
   return this._parentSection;
 }
 
 set parentSection(parentSection) {
-  assert((parentSection instanceof CSection), err.DEVEL);
+  assert((parentSection instanceof CSectionBuilder), err.DEVEL);
   
   if(this._parentSection !== null) {//- do not re-associate
     assert((this._parentSection === parentSection), err.INVARIANT);
@@ -239,18 +239,18 @@ set parentSection(parentSection) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void addSubSection(CSection section)
+//- void addSubSection(CSectionBuilder section)
 
 addSubSection(subsection) {
   assert((arguments.length === 1), err.DEVEL);
-  assert((subsection instanceof CSection), err.DEVEL);
+  assert((subsection instanceof CSectionBuilder), err.DEVEL);
   
   this._subsections.push(subsection);
   subsection.parentSection = this;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection lastSubSection { get; }
+//- CSectionBuilder lastSubSection { get; }
 
 get lastSubSection() {
   let len = this._subsections.length;
@@ -259,7 +259,7 @@ get lastSubSection() {
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection[] subsections { get; }
+//- CSectionBuilder[] subsections { get; }
 
 get subsections() {
   //- it might become necessary to create a clone
@@ -272,5 +272,5 @@ get subsections() {
 //* must appear below module.exports (cyclic require statements)
 const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
-const COutline = require("./Outline.js");
+const COutlineBuilder = require("./OutlineBuilder.js");
 //*/

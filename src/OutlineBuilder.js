@@ -10,12 +10,12 @@ const err = require("./errorMessages.js");
 //- TODO - this could change with ES6 modules
 const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
-const CSection = require("./Section.js");
+const CSectionBuilder = require("./SectionBuilder.js");
 //*/
 
-module.exports = class COutline {
+module.exports = class COutlineBuilder {
 //========//========//========//========//========//========//========//========
-//- new COutline(COptions options, CNodeProxy owner)
+//- new COutlineBuilder(COptions options, CNodeProxy owner)
 
 constructor(options, node) {
   assert((arguments.length === 2), err.DEVEL);
@@ -33,9 +33,9 @@ constructor(options, node) {
   //- CNodeProxy outlineOwner { get; }
   //- bool isImplicitOutline { get; }
 
-  //- void addSection(CSection section)
-  //- CSection lastSection { get; }
-  //- CSection[] sections { get; }
+  //- void addSection(CSectionBuilder section)
+  //- CSectionBuilder lastSection { get; }
+  //- CSectionBuilder[] sections { get; }
 
 //private:
 
@@ -49,7 +49,7 @@ constructor(options, node) {
   //- a SR, or a SC element
   this._outlineOwner = node;
   
-  //- CSection[] _sections
+  //- CSectionBuilder[] _sections
   //- the inner top-level sections of a SR or SC element
   this._sections = [];
 }
@@ -78,18 +78,18 @@ get isImplicitOutline() {
 }
 
 //========//========//========//========//========//========//========//========
-//- void addSection(CSection section)
+//- void addSection(CSectionBuilder section)
 
 addSection(section) {
   assert((arguments.length === 1), err.DEVEL);
-  assert((section instanceof CSection), err.DEVEL);
+  assert((section instanceof CSectionBuilder), err.DEVEL);
   
   this._sections.push(section);
   section.parentOutline = this;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection lastSection { get; }
+//- CSectionBuilder lastSection { get; }
 
 get lastSection() {
   let len = this._sections.length;
@@ -98,7 +98,7 @@ get lastSection() {
 }
 
 //========//========//========//========//========//========//========//========
-//- CSection[] sections { get; }
+//- CSectionBuilder[] sections { get; }
 
 get sections() {
   return this._sections;
@@ -110,5 +110,5 @@ get sections() {
 //* must appear below module.exports (cyclic require statements)
 const COptions = require("./Options.js");
 const CNodeProxy = require("./NodeProxy.js");
-const CSection = require("./Section.js");
+const CSectionBuilder = require("./SectionBuilder.js");
 //*/
