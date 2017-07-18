@@ -29,13 +29,11 @@ constructor(options, node) {
 //public:
 
   //- COptions options { get; }
-
   //- CNodeProxy outlineOwner { get; }
-  //- bool isImplicitOutline { get; }
 
   //- void addSection(CSectionBuilder section)
-  //- CSectionBuilder lastSection { get; }
   //- CSectionBuilder[] sections { get; }
+  //- CSectionBuilder lastSection { get; }
 
 //private:
 
@@ -69,15 +67,6 @@ get outlineOwner() {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool isImplicitOutline { get; }
-
-//- TODO - intended to help create an outline hierarchy
-//- distinguish from outlines of inner SRs
-get isImplicitOutline() {
-  return this._outlineOwner.isSC;
-}
-
-//========//========//========//========//========//========//========//========
 //- void addSection(CSectionBuilder section)
 
 addSection(section) {
@@ -89,19 +78,19 @@ addSection(section) {
 }
 
 //========//========//========//========//========//========//========//========
+//- CSectionBuilder[] sections { get; }
+
+get sections() {
+  return this._sections;
+}
+
+//========//========//========//========//========//========//========//========
 //- CSectionBuilder lastSection { get; }
 
 get lastSection() {
   let len = this._sections.length;
   assert((len > 0), err.INVARIANT);
   return this._sections[len-1];
-}
-
-//========//========//========//========//========//========//========//========
-//- CSectionBuilder[] sections { get; }
-
-get sections() {
-  return this._sections;
 }
 
 //========//========//========//========//========//========//========//========

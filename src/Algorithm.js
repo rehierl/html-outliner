@@ -18,12 +18,18 @@ const CSectionBuilder = require("./SectionBuilder.js");
 const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
+//abbreviations:
+//- heading content (HC) - also used for a HC element - plural HCs
+//- sectioning root (SR) - also used for a SR element - plural SRs
+//- sectioning content (SC) - also used for a SC element - plural SCs
+//- sectioning element (SE) - a SR or SC element - plural SEs
+
 //- identifiers for the states of this outliner automaton
 const STATE_START  = "start"; //- initial identifier
-const STATE_IGNORE = "ignore";//- when nodes have to be ignored; hidden or inner SRs
-const STATE_SR     = "sr";    //- for top-level and inner sectioning root (SR) elements
-const STATE_SC     = "sc";    //- for sectioning content (SC) elements
-const STATE_HC     = "hc";    //- for heading content (HC) elements
+const STATE_IGNORE = "ignore";//- nodes have to be ignored; hidden/inner SRs
+const STATE_SR     = "sr";    //- processing top-level/inner SRs
+const STATE_SC     = "sc";    //- processing SCs
+const STATE_HC     = "hc";    //- processing HCs
 
 //state automaton:
 //- in general, the state identifiers point out what kind of subtree is processed.
@@ -35,7 +41,7 @@ const STATE_HC     = "hc";    //- for heading content (HC) elements
 //  hidden attribute.
 
 //stack operations:
-//- pushing the current node onto the stack is still necessary; it allows to
+//- pushing the current node onto the stack is still necessary as it allows to
 //  determine when to restore the previous context. see the onContext_exit handler.
 //- when compared with the outliner's official/previous steps, also pushing the
 //  current section onto the stack is what makes a read-only mode possible.
@@ -45,12 +51,13 @@ const STATE_HC     = "hc";    //- for heading content (HC) elements
 //- if a section has ended and has no heading, it will be associated with an
 //  implied heading - i.e. implied headings represent two statements:
 //  (1) the section has ended - (2) the section has no heading.
-//- example tag sequence - body, SCE, /SCE, h1-A, /body
-//- depending on how exactly inner SCE's are merged into their first outer SE,
-//  an implied heading allows to prevent associating h1-A with SCE's inner
-//  last section - which is also SCE's only section
-//- depending on how exactly inner SCE's are merged into their first outer SE,
-//  the construct of implied headings might not even be absolutely necessary
+//- example tag sequence - body, SC, /SC, h1-A, /body
+//- depending on how exactly an inner SC is merged into its first outer SE,
+//  an implied heading allows to prevent associating h1-A with the SC's inner
+//  last section - which is also the SC's only section
+//- it turns out, the way the outline algorithm is currently defined (add the
+//  inner sections of SC to the last section of SE), the construct of implied
+//  headings is not necessary
 
 //TODOs:
 //- in general a better error handling; use exceptions instead of asserts
@@ -94,10 +101,9 @@ constructor() {
   
   //- bool _ignoreNextSR
   //- inner SRs are optional and can be ignored
-  //- this flag is used to determine what to do when
-  //  entering the next SR
-  //- the first SR could be the root element itself:
-  //  ignoreNextSR must be initialized to 'false'
+  //- this flag is used to determine what to do when entering the next SR
+  //- the first SR could be the root element itself; making it necessary to
+  //  initialize ignoreNextSR to 'false'
   this._ignoreNextSR = false;
   
   {//- current context; see CContext class
@@ -153,18 +159,18 @@ reset() {
  * -- the DOM node to start with.
  * @param {Object} optionsArg
  * -- the options argument (i.e. { (option: value)* }) to use.
- * -- The outliner begins with the default options, overrides these using the
+ * -- the outliner begins with the default options, overrides these using the
  * supplied options argument object and uses the resulting configuration.
- * -- If optionsArg is missing, the previous options will be used. If the outliner
+ * -- if optionsArg is missing, the previous options will be used. If the outliner
  * runs for the first time, the default options will be used.
- * -- Use an empty object (i.e. {}) to reset the outliner to the default options.
+ * -- use an empty object (i.e. {}) to reset the outliner to the default options.
  * @returns {Outline}
  * -- the resulting outline object.
  */
 createOutline(root, optionsArg) {
   if(arguments.length === 1) {
-    //- use previous or default options if only one argument is provided?
-    //- comment to use the previous options, uncomment to use the default options
+    //- comment to use the previous options
+    //- uncomment to use the default options
     //this._options = new COptions();
     this.validateDomNode(root);
   } else if(arguments.length === 2) {
@@ -432,7 +438,6 @@ onContext_enter() {
   }
   
   if(this._state === STATE_IGNORE) {
-    //- should no longer happen - see traverseInTreeOrder()
     //- enter the child of a to-be-ignored node;
     //  e.g. hidden elements, inner SRs, etc.
     return true;//- leave/ignore
@@ -468,7 +473,6 @@ onContext_exit() {
   }
   
   if(this._state === STATE_IGNORE) {
-    //- should no longer happen - see traverseInTreeOrder()
     //- exit the child of a to-be-ignored node;
     //  e.g. hidden elements, inner SRs, etc.
     return true;//- leave/ignore
@@ -551,7 +555,7 @@ onSRE_enter() {
   }
   
   if(this._state === STATE_START) {
-    //- this SR is the root sectioning element, it must be processed
+    //- this SR is the root SE, it must be processed
     
     if(this._options.verifyInvariants) {
       assert((this._node === this._startingNode), err.INVARIANT);
@@ -578,7 +582,7 @@ onSRE_enter() {
     if(this._section.hasNoHeading) {
       //- this section (in front of this SR) does not yet have a heading
       //- it *does not end* with the beginning of this inner SR
-      //- it extends beyond this inner SR
+      //- it extends beyond the end tag of this inner SR
       //
       //example: hX, dialog, ..., /dialog, p
       //- 'p' must be associated with 'hX's section
@@ -693,7 +697,7 @@ onSRE_exit() {
 
 onSCE_enter() {
   if(this._state === STATE_START) {
-    //- this SC is the root sectioning element
+    //- this SC is the root SE
     
     if(this._options.verifyInvariants) {
       assert((this._node === this._startingNode), err.INVARIANT);
@@ -704,7 +708,7 @@ onSCE_enter() {
     
     //- therefore, all SRs (if any) are optional inner SRs
     //- inner SRs do not contribute to the outlines of their ancestors
-    //  and thus may be completely ignored
+    //  and thus are optional (i.e. may be ignored)
     this._ignoreNextSR = this._options.ignoreInnerSR;
   }
   
@@ -863,10 +867,10 @@ onHCE_enter() {
     //  heading that has a rank associated with it
     //- when taking the following code into account, and when reaching
     //  this point after having entered previous headings, it can be assumed
-    //  that all sections in the current SR/SC have an existing heading
-    //- for each section within this sectioning element, the following is true:
+    //  that all sections in the current SE have an existing heading
+    //- for each section within this SE, the following is true:
     //  (section.heading.rank < section.parentSection.heading.rank)
-    //- siblings don't necessarily have equal rank
+    //- note that sibling sections don't necessarily have equal rank
     assert(this._section.hasHeading, err.INVARIANT);
   }
   
@@ -912,8 +916,8 @@ onHCE_enter() {
       //- parentSection.heading.rank will fail for non-headings
       //- rank is only defined for existing headings; i.e. not for
       //  implied ones, and certainly not for null values.
-      //- but, as stated before, all sections inside the current sectioning
-      //  element, when reaching this point, already have a heading element
+      //- but, as stated before, all sections inside the current SE,
+      //  when reaching this point, already have a heading element
       assert(parentSection.hasHeading, err.INVARIANT);
     }
 
@@ -944,7 +948,7 @@ onHCE_enter() {
       return;//- leave, we are done here
     }
 
-    if(parentSection.hasParentSection !== true) {
+    if(parentSection.parentSection === null) {
       //- add the new implied section to the current outline
       //- see the performance shortcut above
     
@@ -954,7 +958,7 @@ onHCE_enter() {
       if(this._options.verifyInvariants) {
         assert((parentSection === lastSection), err.INVARIANT);
         assert((this._node.rank >= lastSection.heading.rank), err.INVARIANT);
-        //- the shortcut should already have handeled this case
+        //- the shortcut should already have dealt with this case
         assert((this._options.usePerformanceShortcuts !== true), err.INVARIANT);
       }
       
@@ -1020,7 +1024,7 @@ onOtherElement_enter() {
 //- void onOtherElement_exit(CNodeProxy node)
 
 onOtherElement_exit() {
-  //- that would be step (4's last statement)
+  //- that would be step 4's last statement
   //- node.parentSection = this._section?
   return;//- TODO - add code
 }

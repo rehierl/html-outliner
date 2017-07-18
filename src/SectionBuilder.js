@@ -22,9 +22,9 @@ const IMPLIED_HEADING = "implied-heading";
 
 module.exports = class CSectionBuilder {
 //========//========//========//========//========//========//========//========
-//- new CSectionBuilder(CNodeProxy startingNode, CNodeProxy heading, COptions options)
-//- new CSectionBuilder(node, null, options) - start a new section with an unknown heading
-//- new CSectionBuilder(node, heading, options) - start a new section with a known heading
+//- new CSectionBuilder(COptions options, CNodeProxy startingNode, CNodeProxy heading)
+//- (options, node, null) - create a new section with an unknown heading
+//- (options, node, heading) - create a new section with a known heading
 
 constructor(options, node, heading) {
   assert((arguments.length === 3), err.DEVEL);
@@ -43,12 +43,7 @@ constructor(options, node, heading) {
 //public:
 
   //- COptions options { get; }
-
   //- CNodeProxy startingNode { get; }
-  //- bool isExplicitSection { get; }
-  //- bool isImplicitSection { get; }
-
-  //- COutlineBuilder parentOutline { get; set; }
   
   //- bool hasNoHeading { get; }
   //- void createAndSetImpliedHeading()
@@ -58,10 +53,11 @@ constructor(options, node, heading) {
 
   //- bool isAncestorOf(CSectionBuilder subsection)
   //- void addSubSection(CSectionBuilder section)
-  //- bool hasParentSection { get; }
-  //- CSectionBuilder parentSection { get; set; }
-  //- CSectionBuilder lastSubSection { get; }
   //- CSectionBuilder[] subsections { get; }
+  //- CSectionBuilder lastSubSection { get; }
+  //- CSectionBuilder parentSection { get; set; }
+
+  //- COutlineBuilder parentOutline { get; set; }
 
 //private:
 
@@ -73,10 +69,6 @@ constructor(options, node, heading) {
   //- the node that triggered the creation of this section
   //- a SR, a SC or a heading element
   this._startingNode = node;
-  
-  //- COutlineBuilder _parentOutline
-  //- the outline to which this section belongs
-  this._parentOutline = null;
   
   //- CNodeProxy _heading
   //- the heading that is associated with this section
@@ -92,6 +84,10 @@ constructor(options, node, heading) {
   //- the section to which this section is a subsection
   //- (_subsections[ix]._parentSection === this)
   this._parentSection = null;
+  
+  //- COutlineBuilder _parentOutline
+  //- the outline to which this section belongs
+  this._parentOutline = null;
 }
 
 //========//========//========//========//========//========//========//========
@@ -106,37 +102,6 @@ get options() {
 
 get startingNode() {
   return this._startingNode;
-}
-
-//========//========//========//========//========//========//========//========
-//- bool isExplicitSection { get; }
-
-get isExplicitSection() {
-  return !this._startingNode.isHC;
-}
-
-//========//========//========//========//========//========//========//========
-//- bool isImplicitSection { get; }
-
-get isImplicitSection() {
-  return this._startingNode.isHC;
-}
-
-//========//========//========//========//========//========//========//========
-//- COutlineBuilder parentOutline { get; set; }
-
-get parentOutline() {
-  return this._parentOutline;
-}
-
-set parentOutline(parentOutline) {
-  assert((parentOutline instanceof COutlineBuilder), err.DEVEL);
-  
-  if(this._parentOutline !== null) {//- do not re-associate
-    assert((parentOutline === this._parentOutline), err.INVARIANT);
-  }
-  
-  this._parentOutline = parentOutline;
 }
 
 //========//========//========//========//========//========//========//========
@@ -215,10 +180,31 @@ isAncestorOf(subsection) {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool hasParentSection { get; }
+//- void addSubSection(CSectionBuilder section)
 
-get hasParentSection() {
-  return (this._parentSection !== null);
+addSubSection(subsection) {
+  assert((arguments.length === 1), err.DEVEL);
+  assert((subsection instanceof CSectionBuilder), err.DEVEL);
+  
+  this._subsections.push(subsection);
+  subsection.parentSection = this;
+}
+
+//========//========//========//========//========//========//========//========
+//- CSectionBuilder[] subsections { get; }
+
+get subsections() {
+  //- it might become necessary to create a clone
+  return this._subsections;
+}
+
+//========//========//========//========//========//========//========//========
+//- CSectionBuilder lastSubSection { get; }
+
+get lastSubSection() {
+  let len = this._subsections.length;
+  assert((len > 0), err.INVARIANT);
+  return this._subsections[len-1];
 }
 
 //========//========//========//========//========//========//========//========
@@ -239,31 +225,20 @@ set parentSection(parentSection) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void addSubSection(CSectionBuilder section)
+//- COutlineBuilder parentOutline { get; set; }
 
-addSubSection(subsection) {
-  assert((arguments.length === 1), err.DEVEL);
-  assert((subsection instanceof CSectionBuilder), err.DEVEL);
+get parentOutline() {
+  return this._parentOutline;
+}
+
+set parentOutline(parentOutline) {
+  assert((parentOutline instanceof COutlineBuilder), err.DEVEL);
   
-  this._subsections.push(subsection);
-  subsection.parentSection = this;
-}
-
-//========//========//========//========//========//========//========//========
-//- CSectionBuilder lastSubSection { get; }
-
-get lastSubSection() {
-  let len = this._subsections.length;
-  assert((len > 0), err.INVARIANT);
-  return this._subsections[len-1];
-}
-
-//========//========//========//========//========//========//========//========
-//- CSectionBuilder[] subsections { get; }
-
-get subsections() {
-  //- it might become necessary to create a clone
-  return this._subsections;
+  if(this._parentOutline !== null) {//- do not re-associate
+    assert((parentOutline === this._parentOutline), err.INVARIANT);
+  }
+  
+  this._parentOutline = parentOutline;
 }
 
 //========//========//========//========//========//========//========//========
