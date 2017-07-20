@@ -3,7 +3,6 @@
 
 const assert = require("assert");
 const format = require("util").format;
-
 const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
@@ -15,6 +14,20 @@ const CSectionBuilder = require("./SectionBuilder.js");
 
 module.exports = class COutlineBuilder {
 //========//========//========//========//========//========//========//========
+//- properties/methods overview
+
+//public:
+
+  //- new COutlineBuilder(COptions options, CNodeProxy owner)
+
+  //- COptions options { get; }
+  //- CNodeProxy outlineOwner { get; }
+
+  //- void addInnerSection(CSectionBuilder section)
+  //- CSectionBuilder[] innerSections { get; }
+  //- CSectionBuilder lastInnerSection { get; }
+
+//========//========//========//========//========//========//========//========
 //- new COutlineBuilder(COptions options, CNodeProxy owner)
 
 constructor(options, node) {
@@ -25,15 +38,6 @@ constructor(options, node) {
   
   //- implicitly associate node with this outline
   node.innerOutline = this;
-
-//public:
-
-  //- COptions options { get; }
-  //- CNodeProxy outlineOwner { get; }
-
-  //- void addSection(CSectionBuilder section)
-  //- CSectionBuilder[] sections { get; }
-  //- CSectionBuilder lastSection { get; }
 
 //private:
 
@@ -47,9 +51,9 @@ constructor(options, node) {
   //- a SR, or a SC element
   this._outlineOwner = node;
   
-  //- CSectionBuilder[] _sections
+  //- CSectionBuilder[] _innerSections
   //- the inner top-level sections of a SR or SC element
-  this._sections = [];
+  this._innerSections = [];
 }
 
 //========//========//========//========//========//========//========//========
@@ -67,30 +71,30 @@ get outlineOwner() {
 }
 
 //========//========//========//========//========//========//========//========
-//- void addSection(CSectionBuilder section)
+//- void addInnerSection(CSectionBuilder section)
 
-addSection(section) {
+addInnerSection(section) {
   assert((arguments.length === 1), err.DEVEL);
   assert((section instanceof CSectionBuilder), err.DEVEL);
   
-  this._sections.push(section);
+  this._innerSections.push(section);
   section.parentOutline = this;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSectionBuilder[] sections { get; }
+//- CSectionBuilder[] innerSections { get; }
 
-get sections() {
-  return this._sections;
+get innerSections() {
+  return this._innerSections;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSectionBuilder lastSection { get; }
+//- CSectionBuilder lastInnerSection { get; }
 
-get lastSection() {
-  let len = this._sections.length;
+get lastInnerSection() {
+  let len = this._innerSections.length;
   assert((len > 0), err.INVARIANT);
-  return this._sections[len-1];
+  return this._innerSections[len-1];
 }
 
 //========//========//========//========//========//========//========//========

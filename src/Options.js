@@ -2,63 +2,79 @@
 "use strict";
 
 const assert = require("assert");
-
 const err = require("./errorMessages.js");
 const isObjectInstance = require("./isObjectInstance.js");
 
 module.exports = class COptions {
 //========//========//========//========//========//========//========//========
+//- properties/methods overview
 
-constructor() {
-  assert((arguments.length === 0), err.DEVEL);
+//public:
 
-//public: 
-
+  //- new COptions()
   //- bool isDefault { get; }
+
+  //- string selector { get; }
+  //- bool maintainPath { get; }
+  //- bool usePerformanceShortcuts { get; }
   //- bool verifyInvariants { get; }
-  //- bool ignoreHiddenElements { get; }
+  //- bool ignoreHiddenAttributes { get; }
   //- bool ignoreInnerSR { get; }
-  //- bool verifyValidHtml { get; }
+  //- bool allowDomEdits { get; }
   
   //- RegExp rxSR { get; }
   //- RegExp rxSC { get; }
   //- RegExp rxHC { get; }
   
-  //- bool allowDomEdits { get; }
+  //- void combine(Object optionsArg)
+
+//========//========//========//========//========//========//========//========
+//- new COptions()
+
+constructor() {
+  assert((arguments.length === 0), err.DEVEL);
 
 //private:
 
+  //- bool _isDefault
   //- a flag to indicate that all options have default values
   this._isDefault = true;
   
+  //- string _selector
   //- a CSS selector to use on the supplied starting node
   //- won't be used if empty (""), must be valid CSS syntax if non-empty
   //- body.querySelector("body") won't find anything
   this._selector = "";
   
+  //- bool _maintainPath
   //- allows to maintain a path of nodes from the root to the current node
   //- set to maintain a path for debugging purposes
   this._maintainPath = true;
   
+  //- bool _usePerformanceShortcuts
   //- set to use performance shortcuts
   this._usePerformanceShortcuts = false;
   
+  //- bool _verifyInvariants
   //- set to verify all invariants
   //- false = trust that the outliner works perfectly
   this._verifyInvariants = true;
   
+  //- bool _ignoreHiddenAttributes
   //- set to ignore elements that have the hidden attribute set;
   //  i.e. this will also ignore all of their child nodes/elements
   //- false = ignore all hidden attributes; i.e. this will treat all
   //  elements and all of their child nodes/elements as being visible
   this._ignoreHiddenAttributes = false;
   
+  //- bool _ignoreInnerSR
   //- set to ignore inner sectioning root (SR) elements
   //- false = also create outlines for these inner SRs
   //- the term "inner" is relative to the starting node. the starting node will
   //  be processed even if itself is an inner SR.
   this._ignoreInnerSR = false;
   
+  //- RegExp _rxSR
   //- a regular expression used to classify an element
   //  as sectioning root (SR) element
   //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
@@ -66,6 +82,7 @@ constructor() {
   //  the ignoreCase flag (i) will be assigned automatically
   this._rxSR = /^(blockquote|body|details|dialog|fieldset|figure|td)$/i;
   
+  //- RegExp _rxSC
   //- a regular expression used to classify an element
   //  as sectioning content (SC) element
   //- dom will return a node's name/tag in uppercase letters; use /^(...)$/i
@@ -73,6 +90,7 @@ constructor() {
   //  the ignoreCase flag (i) will be assigned automatically
   this._rxSC = /^(article|aside|nav|section)$/i;
   
+  //- RegExp _rxHC
   //- a regular expression used to classify an element
   //  as heading content (HC) element
   //- allows to ignore standard heading elements; e.g. /^(h[1-4])$/i
@@ -84,6 +102,7 @@ constructor() {
   //  the ignoreCase flag (i) will be assigned automatically
   this._rxHC = /^(h[1-6])$/i;
   
+  //- bool _allowDomEdits
   //- set to allow modifications to the dom tree
   //- false = disallow any modifications whatsoever
   this._allowDomEdits = true;
@@ -97,18 +116,21 @@ get isDefault() {
 }
 
 //========//========//========//========//========//========//========//========
+//- string selector { get; }
 
 get selector() {
   return this._selector;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool maintainPath { get; }
 
 get maintainPath() {
   return this._maintainPath;
 }
 
 //========//========//========//========//========//========//========//========
+//- bool usePerformanceShortcuts { get; }
 
 get usePerformanceShortcuts() {
   return this._usePerformanceShortcuts;
@@ -122,7 +144,7 @@ get verifyInvariants() {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool ignoreHiddenElements { get; }
+//- bool ignoreHiddenAttributes { get; }
 
 get ignoreHiddenAttributes() {
   return this._ignoreHiddenAttributes;

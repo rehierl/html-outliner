@@ -2,7 +2,6 @@
 "use strict";
 
 const assert = require("assert");
-
 const err = require("./errorMessages.js");
 
 /* must appear below module.exports
@@ -12,18 +11,23 @@ const CContext = require("./Context.js");
 
 module.exports = class CStack {
 //========//========//========//========//========//========//========//========
-//- new CStack()
-
-constructor() {
-  assert((arguments.length === 0), err.DEVEL);
+//- properties/methods overview
   
 //public:
+
+  //- new CStack()
 
   //- void push(CContext context)
   //- CContext pop()
 
   //- CContext tos { get; }
   //- bool isEmpty { get; }
+
+//========//========//========//========//========//========//========//========
+//- new CStack()
+
+constructor() {
+  assert((arguments.length === 0), err.DEVEL);
 
 //private:
 

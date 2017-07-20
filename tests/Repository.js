@@ -5,7 +5,6 @@ const assert = require("assert");
 const format = require("util").format;
 const path = require("path");
 const fs = require("fs");
-
 const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
@@ -15,19 +14,24 @@ const CScriptFile = require("./ScriptFile.js");
 
 module.exports = class CRepository {
 //========//========//========//========//========//========//========//========
+//- properties/methods overview
+
+//public:
+
+  //- new CRepository()
+
+  //- void load(string path)
+  //- CScriptFile getScript(string relPath)
+
+//private:
+
+  //- void readDirRecursive(string dir, string[] files)
+
+//========//========//========//========//========//========//========//========
 //- new CRepository()
 
 constructor() {
   assert((arguments.length === 0), err.DEVEL);
-
-//public:
-
-  //- void load(String path)
-  //- CScriptFile getScript(String relPath)
-
-//private:
-
-  //- void readDirRecursive(String dir, String[] files)
 
 //private:
 
@@ -36,7 +40,7 @@ constructor() {
 }
 
 //========//========//========//========//========//========//========//========
-//- CScriptFile getScript(String relPath)
+//- CScriptFile getScript(string relPath)
 
 getScript(relPath) {
   assert((arguments.length === 1), err.DEVEL);
@@ -51,7 +55,7 @@ getScript(relPath) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void load(String path)
+//- void load(string path)
 
 load(root) {
   //- "./folder" and "./folder/" => "path-to-parent/folder"
@@ -99,7 +103,7 @@ load(root) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void readDirRecursive(String dir, String[] files)
+//- void readDirRecursive(string dir, string[] files)
 
 readDirRecursive(dir, files) {
   let children = fs.readdirSync(dir);

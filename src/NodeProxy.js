@@ -3,7 +3,6 @@
 
 const assert = require("assert");
 const format = require("util").format;
-
 const err = require("./errorMessages.js");
 const isObjectInstance = require("./isObjectInstance.js");
 
@@ -14,23 +13,51 @@ const CSectionBuilder = require("./SectionBuilder.js");
 const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
-//========//========//========//========//========//========//========//========
-
 //- (DomNode node).nodeType values
 //- used to test if a node represents an element
 const ELEMENT_NODE = 1;
 
-//- a regular expression used to test if a heading element
-//  is a standard heading element; i.e. can the heading's rank value be
-//  derived from the heading's name/tag?
-//- dom will return a node's name/tag in uppercase letters
+//- a regular expression used to test if a heading element is a standard HCE;
+//  i.e. can the heading's rank value be derived from the heading's name/tag?
+//- note - dom will return a node's name/tag in uppercase letters
 const rxHR = /^(h[1-6])$/i;
 
 module.exports = class CNodeProxy {
 //========//========//========//========//========//========//========//========
+//- properties/methods overview
+  
+//public:
+
+  //- new CNodeProxy(COptions options, DomNode node, CNodeProxy parentNode)
+
+  //- COptions options { get; }
+  //- DomNode domNode { get; }
+
+  //- bool isDomNode { get; }
+  //- string nodeName { get; }
+  //- string textContent { get; }
+  //- CNodeProxy parentNode { get; }
+  //- CNodeProxy firstChild { get; }
+  //- CNodeProxy nextSibling { get; }
+
+  //- bool isElement { get; }
+  //- string tagName { get; }
+  //- bool isHidden { get; }
+  //- CNodeProxy querySelector(string selector)
+
+  //- bool isSR { get; }
+  //- bool isSC { get; }
+  //- bool isHC { get; }
+  //- int rank { get; }
+
+  //- used to implement "associate node X with section Y"
+  //- CSectionBuilder parentSection { get; set; }
+  //- COutlineBuilder innerOutline { get; set; }
+
+//========//========//========//========//========//========//========//========
 //- new CNodeProxy(COptions options, DomNode node, CNodeProxy parentNode)
-//- new CNodeProxy(options, node, null) - the root node to traverse
-//- new CNodeProxy(options, node, node) - a node inside the root's sub-tree
+//- (options, node, null) - the root node to traverse
+//- (options, node, node) - a node inside the root's sub-tree
 
 constructor(options, node, parentNode) {
   assert((arguments.length === 3), err.DEVEL);
@@ -43,30 +70,6 @@ constructor(options, node, parentNode) {
     //- represents a node inside the root's sub-tree
     assert((parentNode instanceof CNodeProxy), err.DEVEL);
   }
-  
-//public:
-
-  //- COptions options { get; }
-  //- DomNode domNode { get; }
-
-  //- bool isDomNode { get; }
-  //- String nodeName { get; }
-  //- String textContent { get; }
-  //- CNodeProxy parentNode { get; }
-  //- CNodeProxy firstChild { get; }
-  //- CNodeProxy nextSibling { get; }
-  //- CNodeProxy querySelector(String selector)
-
-  //- bool isElement { get; }
-  //- bool isHidden { get; }
-  //- String tagName { get; }
-  //- bool isSR { get; }
-  //- bool isSC { get; }
-  //- bool isHC { get; }
-  //- int rank { get; }
-
-  //- CSectionBuilder parentSection { get; set; }
-  //- COutlineBuilder innerOutline { get; set; }
 
 //private:
 
@@ -93,8 +96,7 @@ constructor(options, node, parentNode) {
   this._nextSibling = undefined;
   
   //- CSectionBuilder _parentSection
-  //- the section to which this node belongs
-  //  i.e. the section with which this node is associated
+  //- the section with which this node is associated
   //- when done, this should be non-null for all nodes
   //- except for the root node ???
   this._parentSection = null;
@@ -107,7 +109,7 @@ constructor(options, node, parentNode) {
 //private, temporary:
   
   //- bool _isDomNode
-  //- true if _node has the DOM Node properties required by this proxy
+  //- true if _node actually represents a DOM Node
   this._isDomNode = undefined;
   
   //- String _nodeName
@@ -171,6 +173,10 @@ get isDomNode() {
       //- nodes must have a nodeName property
       result = this._node.nodeName;//- same as .tagName
       assert(typeof result === "string");//- not a node
+      
+      //- nodes must have a textContent property
+      result = this._node.textContent;
+      assert((result === null) || (typeof result === "string"));//- not a node
 
       //- nodes must have a firstChild property
       result = this._node.firstChild;
@@ -179,10 +185,6 @@ get isDomNode() {
       //- nodes must have a nextSibling property
       result = this._node.nextSibling;
       assert((result === null) || isObjectInstance(result));//- not a node
-      
-      //- nodes must have a textContent property
-      result = this._node.textContent;
-      assert((result === null) || (typeof result === "string"));//- not a node
 
       this._isDomNode = true;
     } catch(error) {
@@ -190,6 +192,24 @@ get isDomNode() {
     }
   }
   return this._isDomNode;
+}
+
+//========//========//========//========//========//========//========//========
+//- string nodeName { get; }
+
+get nodeName() {
+  if(this._nodeName === undefined) {
+    this._nodeName = this._node.nodeName;
+  }
+  return this._nodeName;
+}
+
+//========//========//========//========//========//========//========//========
+//- string textContent { get; }
+
+get textContent() {
+  let textContent = this._node.textContent;
+  return (textContent !== null) ? textContent : "";
 }
 
 //========//========//========//========//========//========//========//========
@@ -242,24 +262,6 @@ get nextSibling() {
 }
 
 //========//========//========//========//========//========//========//========
-//- String nodeName { get; }
-
-get nodeName() {
-  if(this._nodeName === undefined) {
-    this._nodeName = this._node.nodeName;
-  }
-  return this._nodeName;
-}
-
-//========//========//========//========//========//========//========//========
-//- String textContent { get; }
-
-get textContent() {
-  let textContent = this._node.textContent;
-  return (textContent !== null) ? textContent : "";
-}
-
-//========//========//========//========//========//========//========//========
 //- bool isElement { get; }
 
 get isElement() {
@@ -293,6 +295,14 @@ get isElement() {
 }
 
 //========//========//========//========//========//========//========//========
+//- string tagName { get; }
+
+get tagName() {
+  //- by definition (.nodeName === .tagName)
+  return this.nodeName;
+}
+
+//========//========//========//========//========//========//========//========
 //- bool isHidden { get; }
 
 get isHidden() {
@@ -307,15 +317,7 @@ get isHidden() {
 }
 
 //========//========//========//========//========//========//========//========
-//- string tagName { get; }
-
-get tagName() {
-  //- by definition (.nodeName === .tagName)
-  return this.nodeName;
-}
-
-//========//========//========//========//========//========//========//========
-//- CNodeProxy querySelector(String selector)
+//- CNodeProxy querySelector(string selector)
 
 querySelector(selector) {
   let node = null;

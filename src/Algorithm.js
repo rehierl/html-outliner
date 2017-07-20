@@ -3,7 +3,6 @@
 
 const assert = require("assert");
 const format = require("util").format;
-
 const err = require("./errorMessages.js");
 const isObjectInstance = require("./isObjectInstance.js");
 
@@ -23,13 +22,6 @@ const COutlineBuilder = require("./OutlineBuilder.js");
 //- sectioning root (SR) - also used for a SR element - plural SRs
 //- sectioning content (SC) - also used for a SC element - plural SCs
 //- sectioning element (SE) - a SR or SC element - plural SEs
-
-//- identifiers for the states of this outliner automaton
-const STATE_START  = "start"; //- initial identifier
-const STATE_IGNORE = "ignore";//- nodes have to be ignored; hidden/inner SRs
-const STATE_SR     = "sr";    //- processing top-level/inner SRs
-const STATE_SC     = "sc";    //- processing SCs
-const STATE_HC     = "hc";    //- processing HCs
 
 //state automaton:
 //- in general, the state identifiers point out what kind of subtree is processed.
@@ -62,32 +54,42 @@ const STATE_HC     = "hc";    //- processing HCs
 //TODOs:
 //- in general a better error handling; use exceptions instead of asserts
 
+//- identifiers for the states of this outliner automaton
+const STATE_START  = "start"; //- initial identifier
+const STATE_IGNORE = "ignore";//- nodes have to be ignored; hidden/inner SRs
+const STATE_SR     = "sr";    //- processing top-level/inner SRs
+const STATE_SC     = "sc";    //- processing SCs
+const STATE_HC     = "hc";    //- processing HCs
+
 module.exports = class CAlgorithm {
 //========//========//========//========//========//========//========//========
-//- new CAlgorithm() throws AssertionError
-
-constructor() {
-  assert((arguments.length === 0), err.DEVEL);
+//- properties/methods overview
   
 //public:
 
-  //- COutlineBuilder createOutline(DomNode root) throws AssertionError
-  //- COutlineBuilder createOutline(DomNode root, Object optionsArg) throws AssertionError
+  //- new CAlgorithm()
+  
+  //- COutlineBuilder createOutline(DomNode root)
+  //- COutlineBuilder createOutline(DomNode root, Object optionsArg)
   
 //private:
 
   //- void validateOptionsArg(Object optionsArg)
   //- void validateDomNode(DomNode root)
-
-  //- void traverseInTreeOrder()
   //- void reset()
 
+  //- void traverseInTreeOrder()
   //- void onEnter()
   //- void onExit()
 
-  //- void onXXX_enter()
-  //- void onXXX_exit()
+  //- void onXXX_enter/onXXX_exit()
   //- XXX = Context, NonElement, HiddenElement, SRE, SCE, HCE, OtherElement
+
+//========//========//========//========//========//========//========//========
+//- new CAlgorithm()
+
+constructor() {
+  assert((arguments.length === 0), err.DEVEL);
 
 //private:
 
@@ -614,9 +616,9 @@ onSRE_enter() {
   //  to the section it starts, or to the next outer section?
   this._section = new CSectionBuilder(this._options, this._node, null);
 
-  //- outline.lastSection -> section
+  //- outline.lastInnerSection -> section
   //- section.parentOutline -> outline
-  this._outline.addSection(this._section);
+  this._outline.addInnerSection(this._section);
 }
 
 //========//========//========//========//========
@@ -752,9 +754,9 @@ onSCE_enter() {
   //- does not set node.parentSection
   this._section = new CSectionBuilder(this._options, this._node, null);
 
-  //- outline.lastSection -> section
+  //- outline.lastInnerSection -> section
   //- section.parentOutline -> outline
-  this._outline.addSection(this._section);
+  this._outline.addInnerSection(this._section);
 }
 
 //========//========//========//========//========
@@ -806,7 +808,7 @@ onSCE_exit() {
 
   //example: body, h1-A, h1-B, section, ..., /section, p, /body
   //- exit 'section', i.e. we have reached '/section';
-  //  in that case (this._section !== this._outline.lastSection)?
+  //  in that case (this._section !== this._outline.lastInnerSection)?
   
   //- SCs do contribute to ancestor sectioning elements
   //- this._outline (inner) and context.outline (outer)
@@ -815,17 +817,17 @@ onSCE_exit() {
 
   //the current implementation is following the outliner steps (Version-1)
   //- pseudocode-27: currentOutline = stack.pop()
-  //- pseudocode-28: currentSection = currentOutline.lastSection
+  //- pseudocode-28: currentSection = currentOutline.lastInnerSection
   //- pseudocode-29: currentSection.appendOutline(node.innerOutline);
   
-  let lastSection = context.outline.lastSection;
-  let innerSections = this._outline.sections;
+  let lastSection = context.outline.lastInnerSection;
+  let innerSections = this._outline.innerSections;
 
   for(let ix=0, ic=innerSections.length; ix<ic; ix++) {
     let section = innerSections[ix];
-    //- currentSection.lastSubSection -> section
-    //- section.parentSection -> currentSection
-    lastSection.addSubSection(section);
+    //- lastSection.lastInnerSection -> section
+    //- section.parentSection -> lastSection
+    lastSection.addInnerSection(section);
   }
 
   //- restore the surrounding context
@@ -878,7 +880,7 @@ onHCE_enter() {
     //- this is just an optional performance shortcut
     
     //- the closest section that has highest rank
-    let lastSection = this._outline.lastSection;
+    let lastSection = this._outline.lastInnerSection;
 
     if(this._options.verifyInvariants) {
       //- lastSection always has a heading - see above
@@ -892,7 +894,7 @@ onHCE_enter() {
     //  to the current outline, then there is no need to go up the hierarchy
     if(this._node.rank >= lastSection.heading.rank) {
       let section = new CSectionBuilder(this._options, this._node, this._node);
-      this._outline.addSection(section);
+      this._outline.addInnerSection(section);
       this._section = section;
       
       this._stack.push(new CContext(
@@ -938,7 +940,7 @@ onHCE_enter() {
       //- i.e. siblings don't necessarily have the same rank!
       
       let section = new CSectionBuilder(this._options, this._node, this._node);
-      parentSection.addSubSection(section);
+      parentSection.addInnerSection(section);
       this._section = section;
       
       this._stack.push(new CContext(
@@ -953,7 +955,7 @@ onHCE_enter() {
       //- see the performance shortcut above
     
       //- the closest section that has highest rank
-      let lastSection = this._outline.lastSection;
+      let lastSection = this._outline.lastInnerSection;
 
       if(this._options.verifyInvariants) {
         assert((parentSection === lastSection), err.INVARIANT);
@@ -969,7 +971,7 @@ onHCE_enter() {
       //- enter h1-B; add a new section to the current outline
       
       let section = new CSectionBuilder(this._options, this._node, this._node);
-      this._outline.addSection(section);
+      this._outline.addInnerSection(section);
       this._section = section;
       
       this._stack.push(new CContext(

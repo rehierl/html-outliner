@@ -2,7 +2,6 @@
 "use strict";
 
 const assert = require("assert");
-
 const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
@@ -14,6 +13,19 @@ const COutline = require("./Outline.js");
 
 module.exports = class CContext {
 //========//========//========//========//========//========//========//========
+//- properties/methods overview
+  
+//public:
+  
+  //- new CContext(CNodeProxy node, Anything type,
+  //  COutline outline, CSection section)
+
+  //- CNodeProxy node { get; }
+  //- anything state { get; }
+  //- COutline outline { get; }
+  //- CSection section { get; }
+
+//========//========//========//========//========//========//========//========
 //- new CContext(CNodeProxy node, Anything type,
 //  COutline outline, CSection section)
 
@@ -22,13 +34,6 @@ constructor(node, state, outline, section) {
   assert((node instanceof CNodeProxy), err.DEVEL);
   assert((outline === null) || (outline instanceof COutline), err.DEVEL);
   assert((section === null) || (section instanceof CSection), err.DEVEL);
-  
-//public:
-
-  //- CNodeProxy node { get; }
-  //- Anything state { get; }
-  //- COutline outline { get; }
-  //- CSection section { get; }
 
 //private:
 
@@ -37,7 +42,7 @@ constructor(node, state, outline, section) {
   //  of this context object
   this._node = node;
 
-  //- Anything _state
+  //- anything _state
   //- the current type identifier
   //  associated with this context
   //- mainly used to ignore/hide nodes

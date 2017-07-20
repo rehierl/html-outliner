@@ -3,7 +3,6 @@
 
 const assert = require("assert");
 const format = require("util").format;
-
 const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
@@ -22,7 +21,37 @@ const IMPLIED_HEADING = "implied-heading";
 
 module.exports = class CSectionBuilder {
 //========//========//========//========//========//========//========//========
-//- new CSectionBuilder(COptions options, CNodeProxy startingNode, CNodeProxy heading)
+//- properties/methods overview
+  
+//public:
+
+  //- new CSectionBuilder(
+  //  COptions options, CNodeProxy startingNode, CNodeProxy heading)
+
+  //- COptions options { get; }
+  //- CNodeProxy startingNode { get; }
+  
+  //- used to implement "associate node X with section Y"
+  //- void addInnerNode(CNodeProxy node)
+  //- CNodeProxy[] innerNodes { get; }
+  
+  //- bool hasNoHeading { get; }
+  //- void createAndSetImpliedHeading()
+  //- bool hasImpliedHeading { get; }
+  //- bool hasHeading { get; }
+  //- CNodeProxy heading { get; set; }
+
+  //- void addInnerSection(CSectionBuilder section)
+  //- CSectionBuilder[] innerSections { get; }
+  //- CSectionBuilder lastInnerSection { get; }
+  //- CSectionBuilder parentSection { get; set; }
+  //- bool isAncestorOf(CSectionBuilder subsection)
+
+  //- COutlineBuilder parentOutline { get; set; }
+
+//========//========//========//========//========//========//========//========
+//- new CSectionBuilder(
+//  COptions options, CNodeProxy startingNode, CNodeProxy heading)
 //- (options, node, null) - create a new section with an unknown heading
 //- (options, node, heading) - create a new section with a known heading
 
@@ -39,25 +68,6 @@ constructor(options, node, heading) {
   
   //- don't implicitly associate
   //node.parentSection = this;
-  
-//public:
-
-  //- COptions options { get; }
-  //- CNodeProxy startingNode { get; }
-  
-  //- bool hasNoHeading { get; }
-  //- void createAndSetImpliedHeading()
-  //- bool hasImpliedHeading { get; }
-  //- bool hasHeading { get; }
-  //- CNodeProxy heading { get; set; }
-
-  //- bool isAncestorOf(CSectionBuilder subsection)
-  //- void addSubSection(CSectionBuilder section)
-  //- CSectionBuilder[] subsections { get; }
-  //- CSectionBuilder lastSubSection { get; }
-  //- CSectionBuilder parentSection { get; set; }
-
-  //- COutlineBuilder parentOutline { get; set; }
 
 //private:
 
@@ -76,13 +86,17 @@ constructor(options, node, heading) {
   //  i.e. either IMPLIED_HEADING, or a CNodeProxy heading
   this._heading = heading;
   
-  //- CSectionBuilder[] _subsections
-  //- any number of possibly further nested subsections
-  this._subsections = [];
+  //- CNodeProxy[] _innerNodes
+  //- the nodes associated with this section
+  this._innerNodes = [];
+  
+  //- CSectionBuilder[] _innerSections
+  //- any number of possibly further nested inner sections
+  this._innerSections = [];
   
   //- CSectionBuilder _parentSection
   //- the section to which this section is a subsection
-  //- (_subsections[ix]._parentSection === this)
+  //- (_innerSections[ix]._parentSection === this)
   this._parentSection = null;
   
   //- COutlineBuilder _parentOutline
@@ -102,6 +116,24 @@ get options() {
 
 get startingNode() {
   return this._startingNode;
+}
+
+//========//========//========//========//========//========//========//========
+//- void addInnerNode(CNodeProxy node)
+
+addInnerNode(node) {
+  assert((arguments.length === 1), err.DEVEL);
+  assert((node instanceof CNodeProxy), err.DEVEL);
+  
+  this._innerNodes.push(node);
+  node.parentSection = this;
+}
+
+//========//========//========//========//========//========//========//========
+//- CNodeProxy[] innerNodes { get; }
+
+get innerNodes() {
+  return this._innerNodes;
 }
 
 //========//========//========//========//========//========//========//========
@@ -164,47 +196,31 @@ set heading(heading) {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool isAncestorOf(CSectionBuilder subsection)
+//- void addInnerSection(CSectionBuilder section)
 
-isAncestorOf(subsection) {
+addInnerSection(section) {
   assert((arguments.length === 1), err.DEVEL);
-  assert((subsection instanceof CSectionBuilder), err.DEVEL);
-  let parent = subsection._parentSection;
+  assert((section instanceof CSectionBuilder), err.DEVEL);
   
-  while(parent !== null) {
-    if(parent === this) return true;
-    parent = parent.parentSection;
-  }
-  
-  return false;
+  this._innerSections.push(section);
+  section.parentSection = this;
 }
 
 //========//========//========//========//========//========//========//========
-//- void addSubSection(CSectionBuilder section)
+//- CSectionBuilder[] innerSections { get; }
 
-addSubSection(subsection) {
-  assert((arguments.length === 1), err.DEVEL);
-  assert((subsection instanceof CSectionBuilder), err.DEVEL);
-  
-  this._subsections.push(subsection);
-  subsection.parentSection = this;
-}
-
-//========//========//========//========//========//========//========//========
-//- CSectionBuilder[] subsections { get; }
-
-get subsections() {
+get innerSections() {
   //- it might become necessary to create a clone
-  return this._subsections;
+  return this._innerSections;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSectionBuilder lastSubSection { get; }
+//- CSectionBuilder lastInnerSection { get; }
 
-get lastSubSection() {
-  let len = this._subsections.length;
+get lastInnerSection() {
+  let len = this._innerSections.length;
   assert((len > 0), err.INVARIANT);
-  return this._subsections[len-1];
+  return this._innerSections[len-1];
 }
 
 //========//========//========//========//========//========//========//========
@@ -222,6 +238,23 @@ set parentSection(parentSection) {
   }
   
   this._parentSection = parentSection;
+}
+
+//========//========//========//========//========//========//========//========
+//- bool isAncestorOf(CSectionBuilder subsection)
+//- note - same as subsection.isSubSectionOf(this)
+
+isAncestorOf(subsection) {
+  assert((arguments.length === 1), err.DEVEL);
+  assert((subsection instanceof CSectionBuilder), err.DEVEL);
+  let parent = subsection._parentSection;
+  
+  while(parent !== null) {
+    if(parent === this) return true;
+    parent = parent.parentSection;
+  }
+  
+  return false;
 }
 
 //========//========//========//========//========//========//========//========

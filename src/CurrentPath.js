@@ -3,7 +3,6 @@
 
 const assert = require("assert");
 const format = require("util").format;
-
 const err = require("./errorMessages.js");
 
 /* must appear below module.exports (cyclic require statements)
@@ -13,22 +12,27 @@ const CNodeProxy = require("./NodeProxy.js");
 
 module.exports = class CCurrentPath {
 //========//========//========//========//========//========//========//========
-
-constructor() {
-  assert((arguments.length === 0), err.DEVEL);
+//- properties/methods overview
 
 //public:
 
+  //- new CCurrentPath()
+  
   //- void push(CNodeProxy node)
   //- void pop(CNodeProxy node)
   //- bool isEmpty { get; }
-  
-  //- String currentPath { get; }
+  //- string currentPath { get; }
 
 //private:
 
-  //- String nodeToString(CNodeProxy node)
-  //- String textContentOf(CNodeProxy node)
+  //- string nodeToString(CNodeProxy node)
+  //- string textContentOf(CNodeProxy node)
+
+//========//========//========//========//========//========//========//========
+//- new CCurrentPath()
+
+constructor() {
+  assert((arguments.length === 0), err.DEVEL);
 
 //private:
 
@@ -36,10 +40,10 @@ constructor() {
   //- the internal buffer
   this._path = [];
 
-//- "remember the result" variables
+//- "remember the result" fields
 //private, temporary:
 
-  //- String _currentPath
+  //- string _currentPath
   //- a string representation of the current path
   this._currentPath = undefined;
 }
@@ -80,7 +84,7 @@ get isEmpty() {
 }
 
 //========//========//========//========//========//========//========//========
-//- String currentPath { get; }
+//- string currentPath { get; }
 
 get currentPath() {
   if(this._currentPath === undefined) {
@@ -106,7 +110,7 @@ get currentPath() {
 }
 
 //========//========//========//========//========//========//========//========
-//- String nodeToString(CNodeProxy node)
+//- string nodeToString(CNodeProxy node)
 
 nodeToString(node) {
   let text = node.nodeName;
@@ -123,7 +127,7 @@ nodeToString(node) {
 }
 
 //========//========//========//========//========//========//========//========
-//- String textContentOf(CNodeProxy node)
+//- string textContentOf(CNodeProxy node)
 
 textContentOf(node) {
   const TextLenMax = 16;

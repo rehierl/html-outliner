@@ -3,7 +3,6 @@
 
 const assert = require("assert");
 const format = require("util").format;
-
 const err = require("./errorMessages.js");
 const JSDOM = require("jsdom").JSDOM;
 
@@ -14,25 +13,31 @@ const COutliner = require("../src/Algorithm.js");
 
 module.exports = class CScriptFile {
 //========//========//========//========//========//========//========//========
-//- new CScriptFile()
-
-constructor() {
-  assert((arguments.length === 0), err.DEVEL);
+//- properties/methods overview
   
 //public:
 
-  //- String path { get; }
-  //- String pathAbs { get; }
-  //- void read(String relPath, String absPath, String contents)
+  //- new CScriptFile()
+
+  //- string path { get; }
+  //- string pathAbs { get; }
+  //- void read(string relPath, string absPath, string contents)
   //- void run()
   
 //private:
 
-  //- void execCommands(String contents)
+  //- void execCommands(string contents)
+  
   //- void commandsMap()
-  //- void onCmdOptions(String cmd, String text)
-  //- void onCmdHtml(String cmd, String text, String selector)
-  //- void onCmdOutline(String cmd, String text, String line) - TODO
+  //- void onCmdOptions(string cmd, string text)
+  //- void onCmdHtml(string cmd, string text, string selector)
+  //- void onCmdOutline(string cmd, string text, string line) - TODO
+
+//========//========//========//========//========//========//========//========
+//- new CScriptFile()
+
+constructor() {
+  assert((arguments.length === 0), err.DEVEL);
   
 //private:
   
@@ -53,26 +58,24 @@ constructor() {
   //- the selector that defines the parent node where to start
   //  creating the outline.
   this._htmlSelector = undefined;
-
-//private, temporary:
 }
 
 //========//========//========//========//========//========//========//========
-//- String path { get; }
+//- string path { get; }
 
 get path() {
   return this._relPath;
 }
 
 //========//========//========//========//========//========//========//========
-//- String pathAbs { get; }
+//- string pathAbs { get; }
 
 get pathAbs() {
   return this._absPath;
 }
 
 //========//========//========//========//========//========//========//========
-//- void read(String relPath, String absPath, String contents)
+//- void read(string relPath, string absPath, string contents)
 
 read(relPath, absPath, contents) {
   this._relPath = relPath;
@@ -86,7 +89,7 @@ read(relPath, absPath, contents) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void execCommands(String contents)
+//- void execCommands(string contents)
 
 execCommands(contents) {
   const rxTest = /\$test\./gi;
@@ -185,7 +188,7 @@ commandsMap() {
 }
 
 //========//========//========//========//========//========//========//========
-//- void onCmdOptions(String cmd, String text)
+//- void onCmdOptions(string cmd, string text)
 
 onCmdOptions(name, text, arg0) {
   assert((this._optionsArg === undefined), format(
@@ -237,7 +240,7 @@ onCmdOptions(name, text, arg0) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void onCmdHtml(String cmd, String text, String selector)
+//- void onCmdHtml(string cmd, string text, string selector)
 
 onCmdHtml(name, text, selector) {
   assert((this._htmlContent === undefined), format(
@@ -264,7 +267,7 @@ onCmdHtml(name, text, selector) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void onCmdOutline(String cmd, String text, String line)
+//- void onCmdOutline(string cmd, string text, string line)
 
 onCmdOutline(name, text, line) {
   //- TODO - currently ignored
