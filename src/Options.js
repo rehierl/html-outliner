@@ -19,7 +19,7 @@ module.exports = class COptions {
   //- bool usePerformanceShortcuts { get; }
   //- bool verifyInvariants { get; }
   //- bool ignoreHiddenAttributes { get; }
-  //- bool ignoreInnerSR { get; }
+  //- bool ignoreInnerSRs { get; }
   //- bool allowDomEdits { get; }
   
   //- RegExp rxSR { get; }
@@ -43,7 +43,8 @@ constructor() {
   //- string _selector
   //- a CSS selector to use on the supplied starting node
   //- won't be used if empty (""), must be valid CSS syntax if non-empty
-  //- body.querySelector("body") won't find anything
+  //- body.querySelector("body") won't find anything because body isn't a
+  //  descendant element of body - querySelector() will only find descendants
   this._selector = "";
   
   //- bool _maintainPath
@@ -67,12 +68,12 @@ constructor() {
   //  elements and all of their child nodes/elements as being visible
   this._ignoreHiddenAttributes = false;
   
-  //- bool _ignoreInnerSR
+  //- bool _ignoreInnerSRs
   //- set to ignore inner sectioning root (SR) elements
   //- false = also create outlines for these inner SRs
-  //- the term "inner" is relative to the starting node. the starting node will
-  //  be processed even if itself is an inner SR.
-  this._ignoreInnerSR = false;
+  //- the word "inner" is relative to the starting node. it will be processed,
+  //  even if it is an inner SR, but not if it has the hidden attribute set
+  this._ignoreInnerSRs = false;
   
   //- RegExp _rxSR
   //- a regular expression used to classify an element
@@ -151,10 +152,10 @@ get ignoreHiddenAttributes() {
 }
 
 //========//========//========//========//========//========//========//========
-//- bool ignoreInnerSR { get; }
+//- bool ignoreInnerSRs { get; }
 
-get ignoreInnerSR() {
-  return this._ignoreInnerSR;
+get ignoreInnerSRs() {
+  return this._ignoreInnerSRs;
 }
 
 //========//========//========//========//========//========//========//========
@@ -224,7 +225,7 @@ combine(optionsArg) {
     usePerformanceShortcuts: isBool,
     verifyInvariants: isBool,
     ignoreHiddenAttributes: isBool,
-    ignoreInnerSR: isBool,
+    ignoreInnerSRs: isBool,
     rxSR: isRegExp,
     rxSC: isRegExp,
     rxHC: isRegExp,

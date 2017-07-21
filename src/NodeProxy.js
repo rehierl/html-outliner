@@ -47,7 +47,6 @@ module.exports = class CNodeProxy {
   //- CNodeProxy nextSibling { get; }
 
   //- bool isElement { get; }
-  //- string tagName { get; }
   //- bool isHidden { get; }
   //- CNodeProxy querySelector(string selector)
 
@@ -64,8 +63,8 @@ module.exports = class CNodeProxy {
 
 //========//========//========//========//========//========//========//========
 //- new CNodeProxy(COptions options, DomNode node, CNodeProxy parentNode)
-//- (options, node, null) - the root node to traverse
-//- (options, node, node) - a node inside the root's sub-tree
+//- (options, root, null) - the root/starting node to traverse
+//- (options, node, parent) - a node inside the root's sub-tree
 
 constructor(options, node, parentNode) {
   assert((arguments.length === 3), err.DEVEL);
@@ -73,7 +72,7 @@ constructor(options, node, parentNode) {
   assert(isObjectInstance(node), err.DEVEL);
 
   if(parentNode === null) {
-    //- represents the starting root node
+    //- represents the root/starting node
   } else {
     //- represents a node inside the root's sub-tree
     assert((parentNode instanceof CNodeProxy), err.DEVEL);
@@ -112,7 +111,8 @@ constructor(options, node, parentNode) {
   //- CSectionBuilder _parentSection
   //- the section with which this node is associated
   //- when done, this should be non-null for all nodes
-  //- except for the root node ???
+  //- will remain null, if this node is not part of the outline, or
+  //  if this node represents the root/starting node
   this._parentSection = null;
 
 //- "remember the result" variables
@@ -137,10 +137,12 @@ constructor(options, node, parentNode) {
   
   //- bool _isSR
   //- true if _node is one of (blockquote, body, fieldset, figure, td)
+  //- more precisely: true if this._nodeName matches this._options.rxSR
   this._isSR = undefined;
   
   //- bool _isSC
   //- true if _node is one of (article, aside, nav, section)
+  //- more precisely: true if this._nodeName matches this._options.rxSC
   this._isSC = undefined;
   
   //- bool _isSE
@@ -149,6 +151,7 @@ constructor(options, node, parentNode) {
   
   //- bool _isHC
   //- true if _node is one of (h1, h2, h3, h4, h5, h6)
+  //- more precisely: true if this._nodeName matches this._options.rxHC
   this._isHC = undefined;
   
   //- int _rank in [-1,-6]
@@ -293,6 +296,7 @@ get isElement() {
       assert(result === ELEMENT_NODE);//- not an element
       
       //- only elements have a tagName property
+      //- (.nodeName === .tagName) must always be true
       result = this._node.tagName;//- same as .nodeName
       assert(typeof result === "string");//- not an element
       
@@ -310,14 +314,6 @@ get isElement() {
     }
   }
   return this._isElement;
-}
-
-//========//========//========//========//========//========//========//========
-//- string tagName { get; }
-
-get tagName() {
-  //- by definition of the dom spec, (.nodeName === .tagName) is true
-  return this.nodeName;
 }
 
 //========//========//========//========//========//========//========//========
@@ -425,7 +421,7 @@ get rank() {
 
 //========//========//========//========//========//========//========//========
 //- COutlineBuilder innerOutline { get; set; }
-//- only non-null if this node is a SE (i.e. SRE or SCE)
+//- only non-null if this node is a SE
 
 get innerOutline() {
   return this._innerOutline;

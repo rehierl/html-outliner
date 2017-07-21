@@ -3,7 +3,7 @@ In contrary to "body-dialog-1.test", the child nodes of the inner dialog SR
 will not be processed at all.
 
 Note the following two settings:
-- "ignoreInnerSR": true
+- "ignoreInnerSRs": true
 - "usePerformanceShortcuts": true/false (optional)
 
 $test.$comment() ##########
@@ -17,7 +17,7 @@ $test.$options()
   "rxSR": "^(blockquote|body|details|dialog|fieldset|figure|td)$",
   "rxSC": "^(article|aside|nav|section)$",
   "rxHC": "^(h[1-6])$",
-  "ignoreInnerSR": true,
+  "ignoreInnerSRs": true,
   "allowDomEdits": false
 }
 

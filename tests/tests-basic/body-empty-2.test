@@ -21,7 +21,7 @@ $test.$options()
   "rxSR": "^(blockquote|body|details|dialog|fieldset|figure|td)$",
   "rxSC": "^(article|aside|nav|section)$",
   "rxHC": "^(h[1-6])$",
-  "ignoreInnerSR": false,
+  "ignoreInnerSRs": false,
   "allowDomEdits": false
 }
 

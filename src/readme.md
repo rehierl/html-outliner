@@ -1,5 +1,5 @@
 
 An implementation derived from the outline algorithm's definition.
 
-* this implementation can't yet be executed.
-* the main goal is a clear understanding of the outline algorithm.
+* the main goal is to flesh out the algorithm and get rid of any remaining inconsistencies.
+* this implementation can be debugged, but won't yet produce anything useful.

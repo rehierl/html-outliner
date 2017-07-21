@@ -73,7 +73,8 @@ constructor(options, node, heading) {
   
   //- CNodeProxy _startingNode
   //- the node that triggered the creation of this section
-  //- this node does not necessarily have to be an inner node of this section
+  //- this node does not necessarily have to be an inner node of this section;
+  //  i.e. (this._innerNodes[ix] === this._startingNode) may be true for some ix
   //- e.g. successive HCs will trigger the creation of new implied sections;
   //  in these cases, the HC will be an inner node of these sections
   //- e.g. SE, when entered, will trigger the creation of a first inner section;
@@ -85,23 +86,29 @@ constructor(options, node, heading) {
   //- the heading that is associated with this section
   //- when done, this will be non-null for all sections;
   //  i.e. either IMPLIED_HEADING, or a CNodeProxy heading
+  //- (this._innerNodes[ix] === this._heading) must be true for some ix
   this._heading = heading;
   
   //- CNodeProxy[] _innerNodes
-  //- the nodes associated with this section
+  //- all nodes associated with this section
   this._innerNodes = [];
   
   //- CSectionBuilder[] _subSections
-  //- any number of possibly further nested inner sections
+  //- any number of possibly further nested sub-sections
   this._subSections = [];
   
   //- CSectionBuilder _parentSection
-  //- the section to which this section is a subsection
-  //- (_subSections[ix]._parentSection === this)
+  //- set if this section is a sub-section of some other section
+  //- (this._subSections[ix]._parentSection === this)
+  //- not set if this section is an inner section of some outline - WRN SCE!
   this._parentSection = null;
   
   //- COutlineBuilder _parentOutline
-  //- the outline to which this section belongs
+  //- the outline to which this section is an inner section
+  //- set if this section is an inner section of some outline
+  //- not set if this section is merely a sub-section to some other section
+  //- will be non-null for some this(._parentSection)*._parentOutline
+  //- see this.firstOuterOutline
   this._parentOutline = null;
 }
 
@@ -121,14 +128,12 @@ get startingNode() {
 
 //========//========//========//========//========//========//========//========
 //- void addInnerNode(CNodeProxy node)
-//- implements "associate node X with section Y"
+//- implements "associate section X with node Y"
 
 addInnerNode(node) {
   assert((arguments.length === 1), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
-  
   this._innerNodes.push(node);
-  node.parentSection = this;
 }
 
 //========//========//========//========//========//========//========//========
@@ -199,7 +204,7 @@ set heading(heading) {
 
 //========//========//========//========//========//========//========//========
 //- void addSubSection(CSectionBuilder section)
-//- add the given section as the new last subsection
+//- add the given section as this section's new last sub-section
 
 addSubSection(section) {
   assert((arguments.length === 1), err.DEVEL);
