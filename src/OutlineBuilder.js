@@ -34,10 +34,7 @@ constructor(options, node) {
   assert((arguments.length === 2), err.DEVEL);
   assert((options instanceof COptions), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
-  assert((node.isSR || node.isSC), err.INVARIANT);
-  
-  //- implicitly associate node with this outline
-  node.innerOutline = this;
+  assert(node.isSE, err.INVARIANT);
 
 //private:
 
@@ -48,11 +45,10 @@ constructor(options, node) {
   //- CNodeProxy _outlineOwner
   //- the outline's starting CNodeProxy object
   //- the node that triggered the creation of this outline
-  //- a SR, or a SC element
   this._outlineOwner = node;
   
   //- CSectionBuilder[] _innerSections
-  //- the inner top-level sections of a SR or SC element
+  //- the inner top-level sections of an SE
   this._innerSections = [];
 }
 
@@ -72,13 +68,12 @@ get outlineOwner() {
 
 //========//========//========//========//========//========//========//========
 //- void addInnerSection(CSectionBuilder section)
+//- add the given section as the new last inner section
 
 addInnerSection(section) {
   assert((arguments.length === 1), err.DEVEL);
   assert((section instanceof CSectionBuilder), err.DEVEL);
-  
   this._innerSections.push(section);
-  section.parentOutline = this;
 }
 
 //========//========//========//========//========//========//========//========

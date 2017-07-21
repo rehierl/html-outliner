@@ -25,13 +25,11 @@ module.exports = class CSectionBuilder {
   
 //public:
 
-  //- new CSectionBuilder(
-  //  COptions options, CNodeProxy startingNode, CNodeProxy heading)
+  //- new CSectionBuilder(COptions options, CNodeProxy node, CNodeProxy heading)
 
   //- COptions options { get; }
   //- CNodeProxy startingNode { get; }
   
-  //- used to implement "associate node X with section Y"
   //- void addInnerNode(CNodeProxy node)
   //- CNodeProxy[] innerNodes { get; }
   
@@ -41,17 +39,18 @@ module.exports = class CSectionBuilder {
   //- bool hasHeading { get; }
   //- CNodeProxy heading { get; set; }
 
-  //- void addInnerSection(CSectionBuilder section)
-  //- CSectionBuilder[] innerSections { get; }
-  //- CSectionBuilder lastInnerSection { get; }
+  //- void addSubSection(CSectionBuilder section)
+  //- CSectionBuilder[] subSections { get; }
+  //- CSectionBuilder lastSubSection { get; }
   //- CSectionBuilder parentSection { get; set; }
-  //- bool isAncestorOf(CSectionBuilder subsection)
+  //- bool isAncestorOf(CSectionBuilder section)
 
   //- COutlineBuilder parentOutline { get; set; }
+  //- COutlineBuilder firstOuterOutline { get; }
 
 //========//========//========//========//========//========//========//========
-//- new CSectionBuilder(
-//  COptions options, CNodeProxy startingNode, CNodeProxy heading)
+//- new CSectionBuilder(COptions options, CNodeProxy node, CNodeProxy heading)
+//- node represents the starting node that triggered the creation of this section
 //- (options, node, null) - create a new section with an unknown heading
 //- (options, node, heading) - create a new section with a known heading
 
@@ -59,15 +58,12 @@ constructor(options, node, heading) {
   assert((arguments.length === 3), err.DEVEL);
   assert((options instanceof COptions), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
-  assert((node.isSR || node.isSC || node.isHC), err.INVARIANT);
+  assert((node.isSE || node.isHC), err.INVARIANT);
   
   if(heading !== null) {
     assert((heading instanceof CNodeProxy), err.DEVEL);
     assert(heading.isHC, err.INVARIANT);
   }
-  
-  //- don't implicitly associate
-  //node.parentSection = this;
 
 //private:
 
@@ -77,7 +73,12 @@ constructor(options, node, heading) {
   
   //- CNodeProxy _startingNode
   //- the node that triggered the creation of this section
-  //- a SR, a SC or a heading element
+  //- this node does not necessarily have to be an inner node of this section
+  //- e.g. successive HCs will trigger the creation of new implied sections;
+  //  in these cases, the HC will be an inner node of these sections
+  //- e.g. SE, when entered, will trigger the creation of a first inner section;
+  //  in these cases, those SE won't be part of these sections
+  //- must be a SE, or a HC
   this._startingNode = node;
   
   //- CNodeProxy _heading
@@ -90,13 +91,13 @@ constructor(options, node, heading) {
   //- the nodes associated with this section
   this._innerNodes = [];
   
-  //- CSectionBuilder[] _innerSections
+  //- CSectionBuilder[] _subSections
   //- any number of possibly further nested inner sections
-  this._innerSections = [];
+  this._subSections = [];
   
   //- CSectionBuilder _parentSection
   //- the section to which this section is a subsection
-  //- (_innerSections[ix]._parentSection === this)
+  //- (_subSections[ix]._parentSection === this)
   this._parentSection = null;
   
   //- COutlineBuilder _parentOutline
@@ -120,6 +121,7 @@ get startingNode() {
 
 //========//========//========//========//========//========//========//========
 //- void addInnerNode(CNodeProxy node)
+//- implements "associate node X with section Y"
 
 addInnerNode(node) {
   assert((arguments.length === 1), err.DEVEL);
@@ -138,18 +140,18 @@ get innerNodes() {
 
 //========//========//========//========//========//========//========//========
 //- bool hasNoHeading { get; }
-
 //- true if, and only if, no heading was set;
 //  not even createAndSetImpliedHeading() was executed
+
 get hasNoHeading() {
   return (this._heading === null);
 }
 
 //========//========//========//========//========//========//========//========
 //- void createAndSetImpliedHeading()
-
 //- calling this is equivalent to the statement:
 //  this section does not contain any heading element
+
 createAndSetImpliedHeading() {
   assert((arguments.length === 0), err.DEVEL);
   //- i.e. do not overwrite, not even an implied one
@@ -175,7 +177,7 @@ get hasHeading() {
 
 //========//========//========//========//========//========//========//========
 //- CNodeProxy heading { get; set; }
-//- when the outliner is done, heading must be one of two:
+//- when the outliner is done, the heading property will be one of two:
 //- null - representing an implied heading, or
 //- heading - the first heading element in that section
 
@@ -196,35 +198,36 @@ set heading(heading) {
 }
 
 //========//========//========//========//========//========//========//========
-//- void addInnerSection(CSectionBuilder section)
+//- void addSubSection(CSectionBuilder section)
+//- add the given section as the new last subsection
 
-addInnerSection(section) {
+addSubSection(section) {
   assert((arguments.length === 1), err.DEVEL);
   assert((section instanceof CSectionBuilder), err.DEVEL);
-  
-  this._innerSections.push(section);
-  section.parentSection = this;
+  this._subSections.push(section);
 }
 
 //========//========//========//========//========//========//========//========
-//- CSectionBuilder[] innerSections { get; }
+//- CSectionBuilder[] subSections { get; }
 
-get innerSections() {
+get subSections() {
   //- it might become necessary to create a clone
-  return this._innerSections;
+  return this._subSections;
 }
 
 //========//========//========//========//========//========//========//========
-//- CSectionBuilder lastInnerSection { get; }
+//- CSectionBuilder lastSubSection { get; }
 
-get lastInnerSection() {
-  let len = this._innerSections.length;
+get lastSubSection() {
+  let len = this._subSections.length;
   assert((len > 0), err.INVARIANT);
-  return this._innerSections[len-1];
+  return this._subSections[len-1];
 }
 
 //========//========//========//========//========//========//========//========
 //- CSectionBuilder parentSection { get; set; }
+//- this property will only be set if this section is an inner sub-section
+//  to another parent section; i.e. there exists a direct relationship
 
 get parentSection() {
   return this._parentSection;
@@ -242,7 +245,7 @@ set parentSection(parentSection) {
 
 //========//========//========//========//========//========//========//========
 //- bool isAncestorOf(CSectionBuilder subsection)
-//- note - same as subsection.isSubSectionOf(this)
+//- if this operation existed, same as subsection.isSubSectionOf(this)
 
 isAncestorOf(subsection) {
   assert((arguments.length === 1), err.DEVEL);
@@ -259,6 +262,9 @@ isAncestorOf(subsection) {
 
 //========//========//========//========//========//========//========//========
 //- COutlineBuilder parentOutline { get; set; }
+//- this property will only be set if this section is an inner section of an
+//  outline; i.e. there exists a direct relationship
+//- will be non-null for some this(.parentSection)*.parentOutline
 
 get parentOutline() {
   return this._parentOutline;
@@ -272,6 +278,30 @@ set parentOutline(parentOutline) {
   }
   
   this._parentOutline = parentOutline;
+}
+
+//========//========//========//========//========//========//========//========
+//- COutlineBuilder firstOuterOutline { get; }
+//- returns the first parentOutline that is non-null;
+//  i.e. this(.parentSection)*.parentOutline
+//- returns null if this section is not part of any outline
+
+get firstOuterOutline() {
+  let section = this;
+  
+  while(true) {
+    if(section._parentOutline !== null) {
+      //- this section is a top-level section of an outline
+      return section.parentOutline;
+    }
+    
+    if(section._parentSection === null) {
+      //- this section is not (yet) part of any outline
+      return null;
+    }
+    
+    section = section._parentSection;
+  }
 }
 
 //========//========//========//========//========//========//========//========

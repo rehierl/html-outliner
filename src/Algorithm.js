@@ -17,11 +17,11 @@ const CSectionBuilder = require("./SectionBuilder.js");
 const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
-//abbreviations:
-//- heading content (HC) - also used for a HC element - plural HCs
-//- sectioning root (SR) - also used for a SR element - plural SRs
-//- sectioning content (SC) - also used for a SC element - plural SCs
-//- sectioning element (SE) - a SR or SC element - plural SEs
+//acronyms:
+//- heading content (HC) - also used for a HC element (HCE) - plural HCs
+//- sectioning root (SR) - also used for a SR element (SRE) - plural SRs
+//- sectioning content (SC) - also used for a SC element (SCE) - plural SCs
+//- sectioning element (SE) - a SRE or a SCE - plural SEs
 
 //state automaton:
 //- in general, the state identifiers point out what kind of subtree is processed.
@@ -257,8 +257,8 @@ validateDomNode(root) {
     node = new CNodeProxy(this._options, node.domNode, null);
   }
 
-  //- root must be a sectioning root (SR) or a sectioning content (SC) element
-  assert((node.isSR || node.isSC), err.INVALID_ROOT);
+  //- root must be a sectioning element
+  assert(node.isSE, err.INVALID_ROOT);
 
   //- if the starting node itself is hidden, its outline will be a null value
   //assert((node.isHidden !== true), err.INVALID_ROOT);
@@ -606,9 +606,9 @@ onSRE_enter() {
   this._state = STATE_SR;
   
   //- outline.outlineOwner -> node
-  //- node.innerOutline -> outline
   //- TODO - implement an outline hierarchy?
   this._outline = new COutlineBuilder(this._options, this._node);
+  this._node.innerOutline = this._outline;
 
   //- section.startingNode -> node
   //- does not set node.parentSection
@@ -617,8 +617,8 @@ onSRE_enter() {
   this._section = new CSectionBuilder(this._options, this._node, null);
 
   //- outline.lastInnerSection -> section
-  //- section.parentOutline -> outline
   this._outline.addInnerSection(this._section);
+  this._section.parentOutline = this._outline;
 }
 
 //========//========//========//========//========
@@ -746,17 +746,17 @@ onSCE_enter() {
   this._state = STATE_SC;
 
   //- outline.outlineOwner -> node
-  //- node.innerOutline -> outline
   //- TODO - implement an outline hierarchy?
   this._outline = new COutlineBuilder(this._options, this._node);
+  this._node.innerOutline = this._outline;
 
   //- section.startingNode -> node
   //- does not set node.parentSection
   this._section = new CSectionBuilder(this._options, this._node, null);
 
   //- outline.lastInnerSection -> section
-  //- section.parentOutline -> outline
   this._outline.addInnerSection(this._section);
+  this._section.parentOutline = this._outline;
 }
 
 //========//========//========//========//========
@@ -825,9 +825,9 @@ onSCE_exit() {
 
   for(let ix=0, ic=innerSections.length; ix<ic; ix++) {
     let section = innerSections[ix];
-    //- lastSection.lastInnerSection -> section
-    //- section.parentSection -> lastSection
-    lastSection.addInnerSection(section);
+    //- lastSection.lastSubSection -> section
+    lastSection.addSubSection(section);
+    section.parentSection = lastSection;
   }
 
   //- restore the surrounding context
@@ -895,6 +895,7 @@ onHCE_enter() {
     if(this._node.rank >= lastSection.heading.rank) {
       let section = new CSectionBuilder(this._options, this._node, this._node);
       this._outline.addInnerSection(section);
+      section.parentOutline = this._outline;
       this._section = section;
       
       this._stack.push(new CContext(
@@ -940,7 +941,9 @@ onHCE_enter() {
       //- i.e. siblings don't necessarily have the same rank!
       
       let section = new CSectionBuilder(this._options, this._node, this._node);
-      parentSection.addInnerSection(section);
+      //- parentSection.lastSubSection -> section
+      parentSection.addSubSection(section);
+      section.parentSection = parentSection;
       this._section = section;
       
       this._stack.push(new CContext(
@@ -971,7 +974,9 @@ onHCE_enter() {
       //- enter h1-B; add a new section to the current outline
       
       let section = new CSectionBuilder(this._options, this._node, this._node);
+      //- outline.lastInnerSection -> section
       this._outline.addInnerSection(section);
+      section.parentOutline = this._outline;
       this._section = section;
       
       this._stack.push(new CContext(

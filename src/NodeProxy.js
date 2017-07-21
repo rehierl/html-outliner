@@ -13,12 +13,18 @@ const CSectionBuilder = require("./SectionBuilder.js");
 const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
+//acronyms:
+//- heading content (HC) - also used for a HC element (HCE) - plural HCs
+//- sectioning root (SR) - also used for a SR element (SRE) - plural SRs
+//- sectioning content (SC) - also used for a SC element (SCE) - plural SCs
+//- sectioning element (SE) - a SRE or a SCE - plural SEs
+
 //- (DomNode node).nodeType values
 //- used to test if a node represents an element
 const ELEMENT_NODE = 1;
 
 //- a regular expression used to test if a heading element is a standard HCE;
-//  i.e. can the heading's rank value be derived from the heading's name/tag?
+//  i.e. can the heading's rank value be determined from the heading's name/tag?
 //- note - dom will return a node's name/tag in uppercase letters
 const rxHR = /^(h[1-6])$/i;
 
@@ -47,12 +53,14 @@ module.exports = class CNodeProxy {
 
   //- bool isSR { get; }
   //- bool isSC { get; }
+  //- bool isSE { get; }
   //- bool isHC { get; }
   //- int rank { get; }
+  
+//public:
 
-  //- used to implement "associate node X with section Y"
-  //- CSectionBuilder parentSection { get; set; }
   //- COutlineBuilder innerOutline { get; set; }
+  //- CSectionBuilder parentSection { get; set; }
 
 //========//========//========//========//========//========//========//========
 //- new CNodeProxy(COptions options, DomNode node, CNodeProxy parentNode)
@@ -94,16 +102,18 @@ constructor(options, node, parentNode) {
   //- CNodeProxy _nextSibling
   //- null, or _node's wrapped up next sibling node
   this._nextSibling = undefined;
+
+//private:
   
+  //- COutlineBuilder _innerOutline
+  //- null, or the inner outline if this node is a SE
+  this._innerOutline = null;
+
   //- CSectionBuilder _parentSection
   //- the section with which this node is associated
   //- when done, this should be non-null for all nodes
   //- except for the root node ???
   this._parentSection = null;
-  
-  //- COutlineBuilder _innerOutline
-  //- null, or the inner outline of a SR or SC element
-  this._innerOutline = null;
 
 //- "remember the result" variables
 //private, temporary:
@@ -132,6 +142,10 @@ constructor(options, node, parentNode) {
   //- bool _isSC
   //- true if _node is one of (article, aside, nav, section)
   this._isSC = undefined;
+  
+  //- bool _isSE
+  //- true if (_isSR or _isSC) is true
+  this._isSE = undefined;
   
   //- bool _isHC
   //- true if _node is one of (h1, h2, h3, h4, h5, h6)
@@ -165,18 +179,22 @@ get isDomNode() {
       let result = undefined;
       assert(isObjectInstance(this._node));//- not even an object
       
-      //- nodes must have a nodeType property
+      //- nodes must have an integer nodeType property
       result = this._node.nodeType;
       assert(typeof result === "number");//- not a node
       assert((result % 1) === 0);//- not a node
       
-      //- nodes must have a nodeName property
+      //- nodes must have a string nodeName property
       result = this._node.nodeName;//- same as .tagName
       assert(typeof result === "string");//- not a node
       
-      //- nodes must have a textContent property
+      //- nodes must have a string textContent property
       result = this._node.textContent;
       assert((result === null) || (typeof result === "string"));//- not a node
+      
+      //- nodes must have a parentNode property
+      result = this._node.parentNode;
+      assert((result === null) || isObjectInstance(result));//- not a node
 
       //- nodes must have a firstChild property
       result = this._node.firstChild;
@@ -298,7 +316,7 @@ get isElement() {
 //- string tagName { get; }
 
 get tagName() {
-  //- by definition (.nodeName === .tagName)
+  //- by definition of the dom spec, (.nodeName === .tagName) is true
   return this.nodeName;
 }
 
@@ -359,6 +377,20 @@ get isSC() {
 }
 
 //========//========//========//========//========//========//========//========
+//- bool isSE { get; }
+
+get isSE() {
+  if(this._isSE === undefined) {
+    //- make sure _isSR and _isSC are set
+    let isSR = this.isSR;
+    let isSC = this.isSC;
+    //- check if one of them is true
+    this._isSE = (isSR || isSC);
+  }
+  return this._isSE;
+}
+
+//========//========//========//========//========//========//========//========
 //- bool isHC { get; }
 
 get isHC() {
@@ -392,25 +424,8 @@ get rank() {
 }
 
 //========//========//========//========//========//========//========//========
-//- CSectionBuilder parentSection { get; set; }
-
-get parentSection() {
-  return this._parentSection;
-}
-
-set parentSection(parentSection) {
-  assert((parentSection instanceof CSectionBuilder), err.DEVEL);
-  
-  if(this._parentSection !== null) {
-    //- i.e. do not re-associate
-    assert((this._parentSection === parentSection), err.DEVEL);
-  }
-  
-  this._parentSection = parentSection;
-}
-
-//========//========//========//========//========//========//========//========
 //- COutlineBuilder innerOutline { get; set; }
+//- only non-null if this node is a SE (i.e. SRE or SCE)
 
 get innerOutline() {
   return this._innerOutline;
@@ -425,6 +440,25 @@ set innerOutline(innerOutline) {
   }
   
   this._innerOutline = innerOutline;
+}
+
+//========//========//========//========//========//========//========//========
+//- CSectionBuilder parentSection { get; set; }
+//- implements "associate node X with section Y"
+
+get parentSection() {
+  return this._parentSection;
+}
+
+set parentSection(parentSection) {
+  assert((parentSection instanceof CSectionBuilder), err.DEVEL);
+  
+  if(this._parentSection !== null) {
+    //- i.e. do not re-associate
+    assert((this._parentSection === parentSection), err.DEVEL);
+  }
+  
+  this._parentSection = parentSection;
 }
 
 //========//========//========//========//========//========//========//========
