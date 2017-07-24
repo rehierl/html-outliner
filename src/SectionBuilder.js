@@ -99,17 +99,26 @@ constructor(options, node, heading) {
   
   //- CSectionBuilder _parentSection
   //- set if this section is a sub-section of some other section
-  //- (this._subSections[ix]._parentSection === this)
-  //- not set if this section is an inner section of some outline - WRN SCE!
+  //- (this.subSections[ix].parentSection === this)
+  //- not set if this section is an inner section of some outline - WRN SC!
   this._parentSection = null;
   
   //- COutlineBuilder _parentOutline
   //- the outline to which this section is an inner section
   //- set if this section is an inner section of some outline
   //- not set if this section is merely a sub-section to some other section
-  //- will be non-null for some this(._parentSection)*._parentOutline
+  //- will be non-null for some this(.parentSection)*.parentOutline
   //- see this.firstOuterOutline
   this._parentOutline = null;
+  
+  //notes
+  //- (parentOutline !== null) OR (parentSection !== null) will always be true;
+  //  i.e. at least one of those properties will always be set
+  //- (parentOutline !== null) XOR (parentSection !== null) is usually true;
+  //  i.e. usually only one of those properties will be set
+  //- this condition is not met if, and only if, a section is an inner section
+  //  of the outline of an inner SC - in such a case, both properties are set
+  //- see how, when exiting one, a SC is merged into its first outer SE
 }
 
 //========//========//========//========//========//========//========//========

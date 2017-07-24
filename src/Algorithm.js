@@ -571,8 +571,8 @@ onSR_enter() {
       assert((this._section === null), err.INVARIANT);
     }
     
-    //- inner SRs do not contribute to the outlines of their ancestors
-    //- all other SRs are inner SRs and therefore optional
+    //- SRs do not contribute to the outlines of their ancestors
+    //- all other SRs are inner SRs and are therefore optional
     this._ignoreInnerSRs = this._options.ignoreInnerSR;
   }
   
@@ -846,6 +846,10 @@ onSC_exit() {
       let section = innerSections[ix];
       //- lastSection.lastSubSection -> section
       lastSection.addSubSection(section);
+      //- the parentSection property must be set to match the is-sub-section-of
+      //  relationship - this allows to leave the section's parent SC's outline
+      //  by going up the section hierarchy:
+      //- i.e. (.parentOutline !== null) && (.parentSection !== null)
       section.parentSection = lastSection;
     }
 
@@ -884,15 +888,15 @@ onHC_enter() {
   }
 
   if(this._options.verifyInvariants) {
-    //- when entering a SR/SC, a new section will be created that has no
-    //  heading; the if-statement above will set that heading; so, when
-    //  reaching this point, the first section will always have an existing
+    //- when entering a SE, a new section will be created that has no
+    //  heading - the if-statement above will set that heading - so, when
+    //  reaching this point, the first section will always has an existing
     //  heading that has a rank associated with it
     //- when taking the following code into account, and when reaching
     //  this point after having entered previous headings, it can be assumed
     //  that all sections in the current SE have an existing heading
-    //- for each section within this SE, the following is true:
-    //  (section.heading.rank < section.parentSection.heading.rank)
+    //- furthermore, for each section within the current SE, the following is
+    //  true: (section.heading.rank < section.parentSection.heading.rank)
     //- note that sibling sections don't necessarily have equal rank
     assert(this._section.hasHeading, err.INVARIANT);
   }
@@ -900,7 +904,7 @@ onHC_enter() {
   if(this._options.usePerformanceShortcuts) {
     //- this is just an optional performance shortcut
     
-    //- the closest section that has highest rank
+    //- lastSection is the closest section that has highest rank
     let lastSection = this._outline.lastInnerSection;
 
     if(this._options.verifyInvariants) {
@@ -911,13 +915,12 @@ onHC_enter() {
         || lastSection.isAncestorOf(this._section), err.INVARIANT);
     }
     
-    //- if we already know, that we'll have to add the new section
-    //  to the current outline, then there is no need to go up the hierarchy
+    //- if we already know, that we will have to add the new section to
+    //  the current outline, then there is no need to go up the hierarchy
     if(this._node.rank >= lastSection.heading.rank) {
-      let section = new CSectionBuilder(this._options, this._node, this._node);
-      this._outline.addInnerSection(section);
-      section.parentOutline = this._outline;
-      this._section = section;
+      this._section = new CSectionBuilder(this._options, this._node, this._node);
+      this._outline.addInnerSection(this._section);
+      this._section.parentOutline = this._outline;
       
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
@@ -926,7 +929,7 @@ onHC_enter() {
       return;//- leave, we are done here
     }
     
-    //- can't take that shortcut, so
+    //- we've reached thus far, so we can't take that shortcut
     //- start with this._section and go up the chain
   }
     
@@ -961,11 +964,9 @@ onHC_enter() {
       //- enter h2-C; loop once; add subsection to h1-A
       //- i.e. siblings don't necessarily have the same rank!
       
-      let section = new CSectionBuilder(this._options, this._node, this._node);
-      //- parentSection.lastSubSection -> section
-      parentSection.addSubSection(section);
-      section.parentSection = parentSection;
-      this._section = section;
+      this._section = new CSectionBuilder(this._options, this._node, this._node);
+      parentSection.addSubSection(this._section);
+      this._section.parentSection = parentSection;
       
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
@@ -994,11 +995,9 @@ onHC_enter() {
       //example: body; h2-A; h1-B /body
       //- enter h1-B; add a new section to the current outline
       
-      let section = new CSectionBuilder(this._options, this._node, this._node);
-      //- outline.lastInnerSection -> section
-      this._outline.addInnerSection(section);
-      section.parentOutline = this._outline;
-      this._section = section;
+      this._section = new CSectionBuilder(this._options, this._node, this._node);
+      this._outline.addInnerSection(this._section);
+      this._section.parentOutline = this._outline;
       
       this._stack.push(new CContext(
         this._node, this._state, this._outline, this._section));
@@ -1010,9 +1009,9 @@ onHC_enter() {
     //- otherwise go up the chain/hierarchy
     //- heading elements are part of their surrounding parent sectioning
     //  element, and not of any other ancestor sectioning element
-    //- this requires that going up the chain using the section's
-    //  parentSection property must not leave the current outline
-    //- that is a guaranteed fact; see how SRs/SCs are dealt with
+    //- this requires that going up the chain using the section.parentSection
+    //  property must not leave the current outline
+    //- see how SRs/SCs are dealt with
     parentSection = parentSection.parentSection;
   }//- while
   
