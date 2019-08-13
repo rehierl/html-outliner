@@ -1,13 +1,3 @@
 
-#- files/folders ignored by git
-#- https://help.github.com/articles/ignoring-files
-#- https://git-scm.com/docs/gitignore
-
-#- ignore the about folder
-.about
-
-#- ignore NetBeans' project folder
-nbproject
-
-#- ignore npm's package folder
+#- ignore node packages
 node_modules

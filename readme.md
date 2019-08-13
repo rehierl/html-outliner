@@ -2,24 +2,19 @@
 html-outliner
 ===============
 
-**volatile / pre-alpha**
-
 The goal of this repository is to get a clear understanding of HTML's outline
 algorithm by implementing it using JavaScript and Node.js.
 
-* [Algorithm.js](./src/Algorithm.js) is this repository's main source file.
+* [Algorithm.js](./src/Algorithm.js) is the main source file.
 
-## TODOs
-
-* get it running ...
-* rework the error handling - custom exception types instead of asserts
-* publish on [npmjs.com](https://www.npmjs.com/)
-* and many more things to do ...
+I now consider this attempt a **failure** since the "official" outline
+algorithm, as defined in 2017-07-06, can only be considered broken.
+However, I intend to use the source code in this repository once I have
+a design that deserves to get implemented.
 
 ## Main Features
 
-* completely ignores any hidden elements
-  -- the outliner won't even visit their child nodes
+* ignores hidden elements and their descendants.
 * (optional) read-only access is possible
   -- the outliner won't modify the dom tree in any way.
 * (optional) ignore inner sectioning root elements
@@ -28,6 +23,10 @@ algorithm by implementing it using JavaScript and Node.js.
   -- these will be treated like &lt;h1&gt; heading elements (highest rank)
 
 ## Related Links
+
+* [The W3C-WHATWG memorandum, 2019-05-28](https://www.w3.org/blog/2019/05/w3c-and-whatwg-to-work-together-to-advance-the-open-web-platform/)
+* Note that, due to this memorandum, links targeted at the W3C resources
+  will now be forwarded to WHATWAG resources.
 
 W3C, HTML 5.2, Editor's Draft, 2017-07-06
 
@@ -46,11 +45,6 @@ W3C, DOM 4.1, Editor's Draft, 2017-07-05
 
 * [W3C, DOM Editor's Draft repository](https://github.com/w3c/dom)
 * [W3C, DOM 4.1, Editor's Draft, 2017-07-05](https://w3c.github.io/dom/)
-
-See also:
-
-* [rehierl / html-outliner-spec](https://github.com/rehierl/html-outliner-spec)
-  for further details and notes related to the outline algorithm.
 
 ## License
 
