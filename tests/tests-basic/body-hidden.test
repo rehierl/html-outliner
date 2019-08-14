@@ -5,9 +5,9 @@ starting node.
 In the future, the outliner will be able to handle hidden starting nodes by
 simply returning a null value as the resulting outline object.
 
-For debugging purposes, hidden root nodes are not allowed; i.e. these will cause
-an error. This is to verify that there are no other circumstances in which a
-null value will be returned.
+For debugging purposes, hidden root nodes are not allowed; i.e. these will
+cause an error. This is to verify that there are no other circumstances in
+which a null value will be returned.
 
 $test.$comment() ##########
 $test.$options()

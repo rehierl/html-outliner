@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "name": "html-outliner",
   "description": "A JavaScript implementation of HTML5's outline algorithm.",
-  "homepage": "https://github.com/rehierl/html-outliner",
+  "homepage": "https://github.com/rehierl/html-outliner-impl",
   "keywords": [
     "metalsmith",
     "frontmatter",
@@ -13,7 +13,7 @@
   "license": "MIT",
   "main": "src/Algorithm.js",
   "bugs": {
-    "url": "https://github.com/rehierl/html-outliner/issues"
+    "url": "https://github.com/rehierl/html-outliner-impl/issues"
   },
   "repository": {
     "type": "git",

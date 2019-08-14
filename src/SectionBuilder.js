@@ -13,8 +13,8 @@ const COutlineBuilder = require("./OutlineBuilder.js");
 //*/
 
 //- this constant is used to represent implied headings
-//- it is used when it was determined that a section was completely processed
-//  and when no heading element was associated with it
+//- it is used when it was determined that a section was completely
+//  processed and when no heading element was associated with it
 //- this value won't be visible outside of this module/class;
 //  i.e. it won't be passed on as a result/return value
 const IMPLIED_HEADING = "implied-heading";
@@ -22,17 +22,17 @@ const IMPLIED_HEADING = "implied-heading";
 module.exports = class CSectionBuilder {
 //========//========//========//========//========//========//========//========
 //- properties/methods overview
-  
+
 //public:
 
   //- new CSectionBuilder(COptions options, CNodeProxy node, CNodeProxy heading)
 
   //- COptions options { get; }
   //- CNodeProxy startingNode { get; }
-  
+
   //- void addInnerNode(CNodeProxy node)
   //- CNodeProxy[] innerNodes { get; }
-  
+
   //- bool hasNoHeading { get; }
   //- void createAndSetImpliedHeading()
   //- bool hasImpliedHeading { get; }
@@ -59,7 +59,7 @@ constructor(options, node, heading) {
   assert((options instanceof COptions), err.DEVEL);
   assert((node instanceof CNodeProxy), err.DEVEL);
   assert((node.isSE || node.isHC), err.INVARIANT);
-  
+
   if(heading !== null) {
     assert((heading instanceof CNodeProxy), err.DEVEL);
     assert(heading.isHC, err.INVARIANT);
@@ -70,7 +70,7 @@ constructor(options, node, heading) {
   //- COptions options
   //- the options to use during the next run
   this._options = options;
-  
+
   //- CNodeProxy _startingNode
   //- the node that triggered the creation of this section
   //- this node does not necessarily have to be an inner node of this section;
@@ -81,28 +81,28 @@ constructor(options, node, heading) {
   //  in these cases, those SE won't be part of these sections
   //- must be a SE, or a HC
   this._startingNode = node;
-  
+
   //- CNodeProxy _heading
   //- the heading that is associated with this section
   //- when done, this will be non-null for all sections;
   //  i.e. either IMPLIED_HEADING, or a CNodeProxy heading
   //- (this._innerNodes[ix] === this._heading) must be true for some ix
   this._heading = heading;
-  
+
   //- CNodeProxy[] _innerNodes
   //- all nodes associated with this section
   this._innerNodes = [];
-  
+
   //- CSectionBuilder[] _subSections
   //- any number of possibly further nested sub-sections
   this._subSections = [];
-  
+
   //- CSectionBuilder _parentSection
   //- set if this section is a sub-section of some other section
   //- (this.subSections[ix].parentSection === this)
   //- not set if this section is an inner section of some outline - WRN SC!
   this._parentSection = null;
-  
+
   //- COutlineBuilder _parentOutline
   //- the outline to which this section is an inner section
   //- set if this section is an inner section of some outline
@@ -110,7 +110,7 @@ constructor(options, node, heading) {
   //- will be non-null for some this(.parentSection)*.parentOutline
   //- see this.firstOuterOutline
   this._parentOutline = null;
-  
+
   //notes
   //- (parentOutline !== null) OR (parentSection !== null) will always be true;
   //  i.e. at least one of those properties will always be set
@@ -204,7 +204,7 @@ get heading() {
 set heading(heading) {
   assert((heading instanceof CNodeProxy), err.DEVEL);
   assert(heading.isHC, err.INVARIANT);
-  
+
   //- i.e. do not overwrite, not even an implied one
   assert((this._heading === null), err.INVARIANT);
 
@@ -249,11 +249,11 @@ get parentSection() {
 
 set parentSection(parentSection) {
   assert((parentSection instanceof CSectionBuilder), err.DEVEL);
-  
+
   if(this._parentSection !== null) {//- do not re-associate
     assert((this._parentSection === parentSection), err.INVARIANT);
   }
-  
+
   this._parentSection = parentSection;
 }
 
@@ -265,12 +265,12 @@ isAncestorOf(subsection) {
   assert((arguments.length === 1), err.DEVEL);
   assert((subsection instanceof CSectionBuilder), err.DEVEL);
   let parent = subsection._parentSection;
-  
+
   while(parent !== null) {
     if(parent === this) return true;
     parent = parent.parentSection;
   }
-  
+
   return false;
 }
 
@@ -286,11 +286,11 @@ get parentOutline() {
 
 set parentOutline(parentOutline) {
   assert((parentOutline instanceof COutlineBuilder), err.DEVEL);
-  
+
   if(this._parentOutline !== null) {//- do not re-associate
     assert((parentOutline === this._parentOutline), err.INVARIANT);
   }
-  
+
   this._parentOutline = parentOutline;
 }
 
@@ -302,18 +302,18 @@ set parentOutline(parentOutline) {
 
 get firstOuterOutline() {
   let section = this;
-  
+
   while(true) {
     if(section._parentOutline !== null) {
       //- this section is a top-level section of an outline
       return section.parentOutline;
     }
-    
+
     if(section._parentSection === null) {
       //- this section is not (yet) part of any outline
       return null;
     }
-    
+
     section = section._parentSection;
   }
 }

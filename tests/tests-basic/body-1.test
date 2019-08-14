@@ -1,7 +1,7 @@
 
-With the beginning of a SR, a new section will be created automatically. This
-test is to verify that the single heading element will be used as heading
-for this implicit section.
+With the beginning of a SR, a new section will be created automatically.
+This test is to verify that the single heading element will be used as
+heading for this implicit section.
 
 Note that there are two implict (whitespace) and one explicit #text (A) nodes.
 

@@ -2,15 +2,15 @@
 html-outliner-impl
 ===============
 
-The goal of this repository is to get a clear understanding of HTML's
-outline algorithm by implementing it using JavaScript and Node.js.
+The goal of this repository was to get a clear understanding of HTML's
+outline algorithm by trying to implement it using JavaScript and Node.js.
 
 * [Algorithm.js](./src/Algorithm.js) is the main source file.
 
-I now consider this attempt a **failure** since the "official" outline
-algorithm, as defined in 2017-07-06, can only be considered broken.
-However, I intend to use the source code in this repository once I have
-a design that deserves to get implemented.
+I now consider this attempt a **failure** since the official algorithm,
+as defined in 2017-07-06, has several severe issues.
+
+( Archived until there is a design that deserves to get implemented ... )
 
 ## Main Features
 
@@ -25,8 +25,8 @@ a design that deserves to get implemented.
 ## Related Links
 
 * [The W3C-WHATWG memorandum, 2019-05-28](https://www.w3.org/blog/2019/05/w3c-and-whatwg-to-work-together-to-advance-the-open-web-platform/)
-* Because of this memorandum, links targeted at the W3C resources
-  will now be forwarded to WHATWAG.
+* Due to this memorandum, links targeted at the W3C resources
+  will now be forwarded to WHATWG.
 
 W3C, HTML 5.2, Editor's Draft, 2017-07-06
 

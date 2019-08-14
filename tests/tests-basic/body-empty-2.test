@@ -2,13 +2,13 @@
 This test is to verify the basic behavior when using a body element as
 starting node.
 
-Note - The body element contains an implicit #text node. The body element will
-also contain an implicit #text node in case of "<body> </body>".
+Note - The body element contains an implicit #text node. The body element
+will also contain an implicit #text node in case of "<body> </body>".
 
-So it looks like implicit text nodes will appear if a start/end tag won't appear
-right next to another start/end tag. That is, there will be #text nodes if, and
-only if, there are characters in between those tags; even if those characters
-are whitespace characters.
+So it looks like implicit text nodes will appear if a start/end tag won't
+appear right next to another start/end tag. That is, there will be #text
+nodes if, and only if, there are characters in between those tags; even
+if those characters are whitespace characters.
 
 $test.$comment() ##########
 $test.$options()

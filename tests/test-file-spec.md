@@ -1,8 +1,8 @@
 
 # Test File Format
 
-Test files are UTF-8 encoded text files. Each file represents a test script to
-run. Each test script consists of a sequence of commands:
+Test files are UTF-8 encoded text files. Each file represents a test script
+to run. Each test script consists of a sequence of commands:
 
 ```
 $contents = $text ($command $text)*
@@ -19,8 +19,9 @@ $param = a parameter as defined by $commandName
   therefore be used for documentation.
 * Multiline commands are not supported; i.e. unlike $text, no $command should
   stretch over multiple lines.
-* Each $param represents a parameter required by its $commandName. Its value
-  must not contain a semicolon (;) character. Currently, no escaping is supported.
+* Each $param represents a parameter required by its $commandName.
+  Its value must not contain a semicolon (;) character. Currently, no escaping
+  is supported.
 * Any $text that follows a $command can be considered as an additional implicit
   parameter for its preceeding $command.
 * Commands that have an unknown $commandName will be ignored. Their implicit
@@ -35,8 +36,8 @@ $param = a parameter as defined by $commandName
 
 * $comment commands can be used for additional documentation, or to visually
   separate multiple commands from each other.
-* $comment and $ignore commands are in fact unknown commands and will be silently
-  be ignored.
+* $comment and $ignore commands are in fact unknown commands and will be
+  silently be ignored.
 
 ## $options()
 
@@ -58,10 +59,11 @@ $text = any html content
 
 * $html commands are used to define the HTML content for which outlines will
   be created.
-* $selector is used to pre-select the sectioning element for which to create the
-  outline. Its value will be used like in JSDOM.document.querySelector($selector)
-  expressions and must be valid with regards to these expressions.
-  As a consequence, outlines will only be created for the first matching DOM node.
+* $selector is used to pre-select the sectioning element for which to create
+  the outline. Its value will be used like in JSDOM.document.querySelector(
+  $selector) expressions and must be valid with regards to these expressions.
+  As a consequence, outlines will only be created for the first matching DOM
+  node.
 * $text holds the HTML content for which to create the outline and can be any
   HTML content. $text can be partial HTML fragments, or a fully specified HTML
   document.
@@ -96,4 +98,5 @@ $key = a $line value from "$test.$outline()"
 * Essentially, $text defines what an internal outline should look like.
 * Only one $outline(line) command per $outline() $line is allowed.
 * $outline(line) commands must be located after a $outline() command.
-* If there is no $outline() command, then no $outline(line) commands are allowed.
+* If there is no $outline() command, then no $outline(line) commands are
+  allowed.
